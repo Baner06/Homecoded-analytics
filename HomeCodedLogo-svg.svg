@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#EAB308" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </linearGradient>
+    
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" /> 
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="110" fill="url(#bgGradient)"/>
+
+  <g transform="translate(0, -30)" filter="url(#dropShadow)">
+    
+    <path d="M 216 360 L 296 360 L 276 310 L 236 310 Z" fill="url(#goldGradient)"/>
+    <path d="M 170 390 L 342 390 L 312 360 L 200 360 Z" fill="url(#goldGradient)"/>
+    
+    <path d="M 236 310 C 170 260 180 180 210 140 C 220 180 230 220 256 250" fill="none" stroke="url(#goldGradient)" stroke-width="24" stroke-linecap="round"/>
+    <path d="M 276 310 C 342 260 332 180 302 140 C 292 180 282 220 256 250" fill="none" stroke="url(#goldGradient)" stroke-width="24" stroke-linecap="round"/>
+    
+    <circle cx="256" cy="120" r="56" fill="#F8FAFC"/>
+    
+    <path d="M 256 85 L 236 100 L 244 125 L 268 125 L 276 100 Z" fill="#94A3B8"/>
+    <path d="M 256 85 L 256 64 M 236 100 L 210 95 M 276 100 L 302 95 M 244 125 L 225 150 M 268 125 L 287 150" stroke="#94A3B8" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <text x="256" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" text-anchor="middle" letter-spacing="1">
+    <tspan fill="#FFFFFF">HOME</tspan><tspan fill="#EAB308">CODED</tspan>
+  </text>
+  
+  <text x="256" y="475" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#64748B" text-anchor="middle" letter-spacing="6">
+    APP OFICIAL
+  </text>
+</svg>
