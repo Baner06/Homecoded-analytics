@@ -1,5 +1,14 @@
-const CACHE = 'homecoded-v1';
-const SHELL = ['/', '/index.html', '/HomeCodedLogo-svg.svg', '/manifest.webmanifest'];
+const CACHE = 'homecoded-v2';
+const SHELL = [
+  '/',
+  '/index.html',
+  '/HomeCodedLogo-svg.svg',
+  '/manifest.webmanifest',
+  '/assets/styles/tokens.css',
+  '/assets/styles/base.css',
+  '/assets/styles/layout.css',
+  '/assets/styles/components.css',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
