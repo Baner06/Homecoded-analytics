@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ...payload,
       timezone: TIMEZONE,
-      source: 'homecoded-api',
+      source: 'coded-sports-api',
     });
   } catch (err) {
     console.error('[api/bracket/knockout]', err);

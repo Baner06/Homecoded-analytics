@@ -11,23 +11,36 @@ header {
   backdrop-filter: blur(12px);
   z-index: 40;
   border-bottom: 1px solid var(--border);
-  transition: border-color 0.28s ease;
+  transition:
+    background 0.28s ease,
+    backdrop-filter 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease;
   box-shadow: var(--shadow-sm);
 }
 
 header.header-collapsed {
+  background: transparent;
+  backdrop-filter: none;
   border-bottom-color: transparent;
+  box-shadow: none;
 }
 
 .header-bar {
-  transition: transform 0.28s ease, opacity 0.28s ease;
+  overflow: hidden;
+  max-height: 12rem;
+  transition:
+    max-height 0.28s ease,
+    opacity 0.28s ease,
+    transform 0.28s ease;
   transform: translateY(0);
   opacity: 1;
-  will-change: transform, opacity;
+  will-change: max-height, opacity, transform;
 }
 
 header.header-collapsed .header-bar {
-  transform: translateY(calc(-100% - 0.5rem));
+  max-height: 0;
+  transform: translateY(-0.5rem);
   opacity: 0;
   pointer-events: none;
 }

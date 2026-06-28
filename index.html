@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#0b0f14">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="HomeCoded">
+  <meta name="apple-mobile-web-app-title" content="Coded Sports">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>HomeCoded Analytics — Mundial 2026</title>
+  <title>Coded Sports — Mundial 2026</title>
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/HomeCodedLogo-svg.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/HomeCodedLogo-svg.svg">
+  <link rel="icon" href="/CodedSportsLogo-svg.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/CodedSportsLogo-svg.svg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="/assets/styles/tokens.css">
   <link rel="stylesheet" href="/assets/styles/base.css">
@@ -24,9 +24,9 @@
       <div class="header-bar" id="headerBar">
         <div class="header-top">
         <div class="brand">
-          <img src="/HomeCodedLogo-svg.svg" alt="HomeCoded" class="site-logo" width="40" height="40">
+          <img src="/CodedSportsLogo-svg.svg" alt="Coded Sports" class="site-logo" width="40" height="40">
           <div>
-            <h1>HomeCoded Analytics</h1>
+            <h1>Coded Sports</h1>
             <p id="headerSub">Mundial 2026 · Cargando...</p>
           </div>
         </div>
@@ -75,7 +75,7 @@
   <div class="install-sheet hidden" id="installSheet" role="dialog" aria-modal="true" aria-labelledby="installTitle">
     <div class="install-card">
       <p class="install-platform" id="installPlatform">Instalar app</p>
-      <h2 id="installTitle">Añadir HomeCoded al inicio</h2>
+      <h2 id="installTitle">Añadir Coded Sports al inicio</h2>
       <p id="installIntro">Accede al Mundial 2026 con un toque, como una app nativa.</p>
       <div id="installAndroid" style="display:none">
         <button type="button" class="btn btn-primary" id="btnInstallApp" style="width:100%;margin-bottom:.75rem">Instalar en este dispositivo</button>
@@ -129,7 +129,7 @@
   <div class="tutorial-overlay hidden" id="tutorialOverlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
     <div class="tutorial-card">
       <p class="tutorial-step" id="tutorialStepLabel">Paso 1 de 5</p>
-      <h2 class="tutorial-title" id="tutorialTitle">Bienvenido a HomeCoded</h2>
+      <h2 class="tutorial-title" id="tutorialTitle">Bienvenido a Coded Sports</h2>
       <p class="tutorial-text" id="tutorialText"></p>
       <div class="tutorial-dots" id="tutorialDots"></div>
       <div class="tutorial-actions">
@@ -144,6 +144,7 @@
   <script>
     const API_URL = '/api/matches/today';
     const BRACKET_API = '/api/bracket/knockout';
+    const SITE_URL = 'coded-sports-analytics.vercel.app';
 
     async function fetchJsonApi(url){
       const res = await fetch(url, { cache: 'no-store' });
@@ -198,11 +199,11 @@
     const BRACKET_PDF_RADIUS = 2.2;
     const BRACKET_PDF_BOX_H = 14;
     const BRACKET_PDF_FEEDS = {
-      90:[73,74], 89:[75,77], 93:[81,82], 94:[83,84],
-      97:[90,89], 98:[93,94], 101:[97,98],
-      91:[76,78], 92:[79,80], 95:[85,87], 96:[86,88],
-      99:[91,92], 100:[95,96], 102:[99,100],
-      104:[101,102],
+      90: [73, 75], 89: [74, 77], 94: [81, 82], 93: [83, 84],
+      97: [90, 89], 98: [94, 93], 101: [97, 98],
+      91: [76, 78], 92: [79, 80], 95: [86, 88], 96: [85, 87],
+      99: [91, 92], 100: [95, 96], 102: [99, 100],
+      104: [101, 102],
     };
     const BET_KEY = 'hc_mi_apuesta';
     const TUTORIAL_KEY = 'hc_tutorial_v1';
@@ -590,7 +591,7 @@
       }
       intro.textContent = iosDevice
         ? 'Safari no permite instalar con un solo toque: sigue estos pasos y quedará en tu pantalla de inicio.'
-        : 'Instala HomeCoded Analytics en tu teléfono para abrirla como app nativa.';
+        : 'Instala Coded Sports en tu teléfono para abrirla como app nativa.';
 
       sheet.classList.remove('hidden');
     }
@@ -682,7 +683,7 @@
 
     const TUTORIAL_STEPS = [
       {
-        title: 'Bienvenido a HomeCoded',
+        title: 'Bienvenido a Coded Sports',
         text: 'Análisis predictivo del Mundial 2026 en hora Colombia (COT). Aquí ves partidos del día, probabilidades y seguimiento en vivo.',
       },
       {
@@ -812,11 +813,11 @@
     function renderWinOutlook(m){
       const w = m.analysis?.winOutlook;
       if(!w) return '';
-      const homeTip = `${m.home.name} gana en 90 min según el modelo HomeCoded (forma, dominio y fuerza relativa).`;
+      const homeTip = `${m.home.name} gana en 90 min según el modelo Coded Sports (forma, dominio y fuerza relativa).`;
       const drawTip = 'Probabilidad de empate al final del tiempo reglamentario (90 min).';
-      const awayTip = `${m.away.name} gana en 90 min según el modelo HomeCoded (forma, dominio y fuerza relativa).`;
+      const awayTip = `${m.away.name} gana en 90 min según el modelo Coded Sports (forma, dominio y fuerza relativa).`;
       return `<div class="win-outlook">
-        <div class="win-outlook-title">Probabilidad de resultado · modelo HomeCoded</div>
+        <div class="win-outlook-title">Probabilidad de resultado · modelo Coded Sports</div>
         <div class="win-bar-row win-home win-bar-tip" data-tip-title="Victoria local" data-tip-text="${esc(homeTip)} · ${w.home}%">
           <span class="win-bar-label">${flagImg(m.home)} ${esc(m.home.name)}</span>
           <div class="win-bar-track"><i style="width:${barWidth(w.home, 100)}"></i></div>
@@ -994,7 +995,7 @@
 
     async function loadLogoForPdf(){
       try {
-        const res = await fetch('/HomeCodedLogo-svg.svg');
+        const res = await fetch('/CodedSportsLogo-svg.svg');
         if(!res.ok) return null;
         const svgText = await res.text();
         const img = new Image();
@@ -1023,7 +1024,7 @@
       const footerH = compact ? 11 : 20;
       const y0 = pageH - footerH;
       const line1 = options.line1 || 'Líneas conservadoras para mayor tasa de acierto';
-      const line2 = options.line2 || 'homecoded-analytics.vercel.app';
+      const line2 = options.line2 || SITE_URL;
       const line3 = options.line3 || 'Cuotas Betano de referencia · no influyen en el modelo';
       doc.setFillColor(...colors.bg);
       doc.rect(0, y0, W, footerH, 'F');
@@ -1072,7 +1073,7 @@
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(isFirstPage ? 13 : 9);
       doc.setTextColor(...colors.text);
-      doc.text('HomeCoded Analytics', logoX + (logoData ? logoSize + 3 : 0), isFirstPage ? 16 : 9);
+      doc.text('Coded Sports', logoX + (logoData ? logoSize + 3 : 0), isFirstPage ? 16 : 9);
 
       if(isFirstPage){
         doc.setFontSize(options.titleSize || 14);
@@ -1207,7 +1208,7 @@
         });
 
         drawPdfFooter(doc, W, margin);
-        doc.save('homecoded-reporte-predicciones.pdf');
+        doc.save('coded-sports-reporte-predicciones.pdf');
       } finally {
         btn.disabled = false;
         btn.textContent = prevLabel;
@@ -1581,9 +1582,9 @@
         drawPdfFooter(doc, W, margin, {
           colors: PDF_BRACKET,
           compact: true,
-          text: 'Cuadro actualizado según resultados oficiales y cruces del torneo * homecoded-analytics.vercel.app * HomeCoded Analytics · Mundial FIFA 2026',
+          text: `Cuadro actualizado según resultados oficiales y cruces del torneo * ${SITE_URL} * Coded Sports · Mundial FIFA 2026`,
         });
-        doc.save('homecoded-cuadro-eliminatorio.pdf');
+        doc.save('coded-sports-cuadro-eliminatorio.pdf');
       } finally {
         btn.disabled = !bracketData?.ok;
         btn.textContent = prevLabel;

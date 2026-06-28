@@ -1,6 +1,6 @@
 {
-  "name": "HomeCoded Analytics",
-  "short_name": "HomeCoded",
+  "name": "Coded Sports",
+  "short_name": "Coded Sports",
   "description": "Estadísticas y apuestas del Mundial 2026",
   "start_url": "/instalar",
   "scope": "/",
@@ -11,13 +11,13 @@
   "lang": "es",
   "icons": [
     {
-      "src": "/HomeCodedLogo-svg.svg",
+      "src": "/CodedSportsLogo-svg.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/HomeCodedLogo-svg.svg",
+      "src": "/CodedSportsLogo-svg.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"

@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
     const payload = {
       ok: true,
-      source: 'homecoded-api',
+      source: 'coded-sports-api',
       timezone: TIMEZONE,
       date,
       dateLabel: formatDateLongColombia(new Date(`${date}T12:00:00`)),

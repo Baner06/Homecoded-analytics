@@ -1,8 +1,8 @@
-const CACHE = 'homecoded-v2';
+const CACHE = 'coded-sports-v1';
 const SHELL = [
   '/',
   '/index.html',
-  '/HomeCodedLogo-svg.svg',
+  '/CodedSportsLogo-svg.svg',
   '/manifest.webmanifest',
   '/assets/styles/tokens.css',
   '/assets/styles/base.css',

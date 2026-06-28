@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      provider: 'HomeCoded Betano Reference',
+      provider: 'Coded Sports Betano Reference',
       disclaimer: 'Cuotas Betano de referencia. No influyen en las predicciones del modelo.',
       refreshSeconds: 600,
       odds,

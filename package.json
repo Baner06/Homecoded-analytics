@@ -1,7 +1,7 @@
 {
-  "name": "homecoded-analytics",
+  "name": "coded-sports",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "HomeCoded Analytics — API y dashboard Mundial 2026"
+  "description": "Coded Sports — API y dashboard Mundial 2026"
 }
