@@ -1,4 +1,4 @@
-import { getKnockoutBracket, invalidateFixturesCache } from '../../lib/fixtures.js';
+import { getKnockoutBracket, invalidateFixturesCache, invalidateSoftCaches } from '../../lib/fixtures.js';
 import { getDateISOInColombia, TIMEZONE } from '../../lib/timezone.js';
 
 export const config = { runtime: 'nodejs' };
@@ -17,6 +17,9 @@ export default async function handler(req, res) {
 
   try {
     if (req.query?.refresh === '1') {
+      invalidateSoftCaches();
+    }
+    if (req.query?.full === '1') {
       invalidateFixturesCache();
     }
 

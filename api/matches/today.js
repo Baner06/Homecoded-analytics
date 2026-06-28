@@ -1,4 +1,4 @@
-import { getTodayMatches, invalidateFixturesCache } from '../../lib/fixtures.js';
+import { getTodayMatches, invalidateFixturesCache, invalidateSoftCaches } from '../../lib/fixtures.js';
 import {
   formatDateLongColombia,
   formatKickoffColombia,
@@ -27,6 +27,9 @@ export default async function handler(req, res) {
 
   try {
     if (req.query?.refresh === '1') {
+      invalidateSoftCaches();
+    }
+    if (req.query?.full === '1') {
       invalidateFixturesCache();
     }
 

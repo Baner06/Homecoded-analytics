@@ -144,6 +144,26 @@
   <script>
     const API_URL = '/api/matches/today';
     const BRACKET_API = '/api/bracket/knockout';
+
+    async function fetchJsonApi(url){
+      const res = await fetch(url, { cache: 'no-store' });
+      const text = await res.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        const snippet = text.trim().slice(0, 80);
+        if (res.status === 403 || /^Forbidden/i.test(snippet)) {
+          throw new Error('El servidor tardó demasiado en responder. Espera unos segundos e intenta de nuevo.');
+        }
+        throw new Error(`Respuesta inválida del servidor (${res.status})`);
+      }
+      if (!res.ok || data?.ok === false) {
+        throw new Error(data?.error || `Error del servidor (${res.status})`);
+      }
+      return data;
+    }
+
     const BRACKET_PHASES = ['round-of-32', 'round-of-16', 'quarter-finals', 'semi-finals'];
     const BRACKET_PHASE_NAMES = {
       'round-of-32': 'Dieciseisavos de final',
@@ -2337,9 +2357,8 @@
       }
       try {
         const refreshFlag = bustCache ? '&refresh=1' : '';
-        const res = await fetch(`${BRACKET_API}?_=${Date.now()}${refreshFlag}`, { cache: 'no-store' });
-        const data = await res.json();
-        if(!res.ok || !data.ok) throw new Error(data.error || 'Error al cargar cuadro');
+        const data = await fetchJsonApi(`${BRACKET_API}?_=${Date.now()}${refreshFlag}`);
+        if(!data.ok) throw new Error(data.error || 'Error al cargar cuadro');
         bracketData = data;
         updateBracketHeader(data);
         document.getElementById('btnBracketPdf').disabled = !data.ok;
@@ -2418,13 +2437,12 @@
       }
       try{
         const cacheBust = `_=${Date.now()}`;
-        const refreshFlag = (!silent || bustCache) ? '&refresh=1' : '';
+        const refreshFlag = bustCache ? '&refresh=1' : '';
         const url = date
           ? `${API_URL}?date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
           : `${API_URL}?${cacheBust}${refreshFlag}`;
-        const res=await fetch(url, { cache: 'no-store' });
-        const data=await res.json();
-        if(!res.ok||!data.ok) throw new Error(data.error||'Error API');
+        const data = await fetchJsonApi(url);
+        if(!data.ok) throw new Error(data.error||'Error API');
         const openId=silent ? document.querySelector('.match.is-open')?.dataset.id : null;
         const openLiveView=silent && openId
           ? !!document.querySelector(`#match-${openId} .view-switch button[data-view="live"].active`)
