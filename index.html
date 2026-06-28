@@ -21,8 +21,8 @@
     .wrap{max-width:640px;margin:0 auto;padding:0 .875rem 1rem}
     header{position:sticky;top:0;background:rgba(11,15,20,.95);backdrop-filter:blur(10px);z-index:40;border-bottom:1px solid var(--border);transition:border-color .28s ease}
     header.header-collapsed{border-bottom-color:transparent}
-    .header-bar{transition:transform .28s ease,opacity .28s ease,max-height .28s ease;transform:translateY(0);opacity:1;max-height:8rem;overflow:hidden}
-    header.header-collapsed .header-bar{transform:translateY(calc(-100% - .5rem));opacity:0;max-height:0;pointer-events:none}
+    .header-bar{transition:transform .28s ease,opacity .28s ease;transform:translateY(0);opacity:1;will-change:transform,opacity}
+    header.header-collapsed .header-bar{transform:translateY(calc(-100% - .5rem));opacity:0;pointer-events:none}
     .header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;padding:.75rem 0 .5rem}
     .brand{display:flex;align-items:center;gap:.625rem;min-width:0}
     .site-logo{width:2.5rem;height:2.5rem;border-radius:.5rem;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -928,24 +928,32 @@
       const header = document.getElementById('siteHeader');
       if(!header) return;
       let lastY = window.scrollY;
+      let headerHidden = false;
       let ticking = false;
-      const threshold = 56;
+      const minDelta = 12;
+      const hideAfter = 80;
+      const showNearTop = 20;
+
+      const applyHeaderState = (hidden)=>{
+        if(headerHidden === hidden) return;
+        headerHidden = hidden;
+        header.classList.toggle('header-collapsed', hidden);
+      };
 
       window.addEventListener('scroll', ()=>{
         if(ticking) return;
         ticking = true;
         requestAnimationFrame(()=>{
-          const y = window.scrollY;
-          const scrollingDown = y > lastY && y > threshold;
-          const scrollingUp = y < lastY;
+          const y = Math.max(0, window.scrollY);
+          const delta = y - lastY;
           const blocked = listOpen || bracketOpen;
 
-          if(blocked){
-            header.classList.remove('header-collapsed');
-          } else if(scrollingDown){
-            header.classList.add('header-collapsed');
-          } else if(scrollingUp || y <= threshold){
-            header.classList.remove('header-collapsed');
+          if(blocked || y <= showNearTop){
+            applyHeaderState(false);
+          } else if(!headerHidden && delta > minDelta && y > hideAfter){
+            applyHeaderState(true);
+          } else if(headerHidden && delta < -minDelta){
+            applyHeaderState(false);
           }
 
           lastY = y;
