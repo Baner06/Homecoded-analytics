@@ -1,0 +1,26 @@
+{
+  "name": "HomeCoded Analytics",
+  "short_name": "HomeCoded",
+  "description": "Estadísticas y apuestas del Mundial 2026",
+  "start_url": "/instalar",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/HomeCodedLogo-svg.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/HomeCodedLogo-svg.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

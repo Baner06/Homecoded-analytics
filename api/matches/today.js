@@ -1,4 +1,4 @@
-import { getTodayMatches } from '../../lib/fixtures.js';
+import { getTodayMatches, invalidateFixturesCache } from '../../lib/fixtures.js';
 import {
   formatDateLongColombia,
   formatKickoffColombia,
@@ -26,6 +26,10 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (req.query?.refresh === '1') {
+      invalidateFixturesCache();
+    }
+
     const requested = parseDateParam(req.query?.date);
     const dateIso = requested || getDateISOInColombia();
 
@@ -39,12 +43,12 @@ export default async function handler(req, res) {
     } = await getTodayMatches(dateIso);
 
     const hasLive = matches.some((m) => m.status === 'live');
-    res.setHeader(
-      'Cache-Control',
-      hasLive
-        ? 'public, s-maxage=60, stale-while-revalidate=30'
-        : 'public, s-maxage=1800, stale-while-revalidate=3600'
-    );
+    const cacheHeader = hasLive
+      ? 'public, s-maxage=60, stale-while-revalidate=30'
+      : isToday
+        ? 'public, s-maxage=300, stale-while-revalidate=120'
+        : 'public, s-maxage=1800, stale-while-revalidate=3600';
+    res.setHeader('Cache-Control', cacheHeader);
 
     const payload = {
       ok: true,
@@ -57,7 +61,8 @@ export default async function handler(req, res) {
       tournamentMaxDate,
       matchCount: matches.length,
       totalTournamentFixtures: totalFixtures,
-      fixturesProvider: 'thestatsapi.com / openfootball (gratuito)',
+      fixturesProvider: 'openfootball + thestatsapi (equipos y cuadro actualizado)',
+      refereesProvider: 'FIFA + ESPN + SofaScore (designación oficial, actualizada diariamente)',
       liveScoresProvider: hasLive ? 'ESPN / worldcup26.ir (marcador y stats en vivo)' : null,
       matches: matches.map((m) => ({
         ...m,

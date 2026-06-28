@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="HomeCoded">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>HomeCoded Analytics — Mundial 2026</title>
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/HomeCodedLogo-svg.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/HomeCodedLogo-svg.svg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -13,7 +19,10 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
     .wrap{max-width:640px;margin:0 auto;padding:0 .875rem 1rem}
-    header{position:sticky;top:0;background:rgba(11,15,20,.95);backdrop-filter:blur(10px);z-index:40;border-bottom:1px solid var(--border)}
+    header{position:sticky;top:0;background:rgba(11,15,20,.95);backdrop-filter:blur(10px);z-index:40;border-bottom:1px solid var(--border);transition:border-color .28s ease}
+    header.header-collapsed{border-bottom-color:transparent}
+    .header-bar{transition:transform .28s ease,opacity .28s ease,max-height .28s ease;transform:translateY(0);opacity:1;max-height:8rem;overflow:hidden}
+    header.header-collapsed .header-bar{transform:translateY(calc(-100% - .5rem));opacity:0;max-height:0;pointer-events:none}
     .header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;padding:.75rem 0 .5rem}
     .brand{display:flex;align-items:center;gap:.625rem;min-width:0}
     .site-logo{width:2.5rem;height:2.5rem;border-radius:.5rem;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -51,6 +60,8 @@
     .match-meta{font-size:.6875rem;color:var(--muted);font-weight:400;text-align:center;width:100%}
     .pill{font-size:.625rem;padding:.2rem .55rem;border-radius:9999px;border:1px solid var(--border);color:var(--muted);background:transparent;display:inline-flex;align-items:center;gap:.35rem;font-weight:500;line-height:1.2}
     .pill.live{color:#fdba74;border-color:rgba(251,146,60,.45);background:rgba(251,146,60,.1)}
+    .pill.live.shootout{color:var(--accent);border-color:rgba(94,179,246,.45);background:rgba(94,179,246,.1)}
+    .pill.live.shootout .status-dot{background:var(--accent);animation:statusPulse 1.4s ease-in-out infinite}
     .pill.finished{color:var(--red);border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1)}
     .pill.upcoming{color:#22d3ee;border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.08)}
     .pill.starting{color:#fdba74;border-color:rgba(251,146,60,.45);background:rgba(251,146,60,.1)}
@@ -68,7 +79,18 @@
     @media(min-width:520px){.grid2{grid-template-columns:1fr 1fr}}
     .stat-row{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;padding:.375rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
     .bar{height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-top:.25rem}
-    .bar>i{display:block;height:100%;background:var(--accent);border-radius:99px}
+    .bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;min-width:0}
+    .bar.bar-home>i{background:linear-gradient(90deg,#38bdf8,#0ea5e9)}
+    .bar.bar-away>i{background:linear-gradient(90deg,#c084fc,#a855f7)}
+    .bar-tip{cursor:help;padding:.2rem 0 .05rem}
+    .bar-tip .bar{margin-top:0}
+    .shots-proj-grid{display:grid;grid-template-columns:1fr;gap:.625rem}
+    @media(min-width:520px){.shots-proj-grid{grid-template-columns:1fr 1fr}}
+    .shots-team-box{border:1px solid rgba(255,255,255,.07);border-radius:.5rem;padding:.5rem .625rem;background:rgba(255,255,255,.02);min-width:0}
+    .shots-team-head{display:flex;align-items:center;gap:.375rem;font-size:.6875rem;font-weight:600;margin-bottom:.375rem;color:var(--text)}
+    .shots-team-box th{font-size:.5625rem;line-height:1.25;white-space:normal}
+    .shots-team-box th.num,.shots-team-box td.num{text-align:center;vertical-align:middle;width:34%}
+    .shots-team-box th.num{padding:.45rem .35rem}
     .flag{width:1.375rem;height:1rem;min-width:1.375rem;min-height:1rem;object-fit:cover;border-radius:3px;flex-shrink:0;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
     .flag-emoji{font-size:.875rem;line-height:1rem;text-align:center;overflow:hidden;background:rgba(255,255,255,.04)}
     .team-label{display:flex;align-items:center;gap:.375rem;font-size:.75rem;font-weight:600;color:var(--muted);margin:.625rem 0 .375rem}
@@ -109,6 +131,23 @@
     .live-seg-box{flex:1;height:.5rem;min-width:.5rem;max-width:1.125rem;border-radius:3px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);transition:background .2s,border-color .2s,box-shadow .2s}
     .live-seg-box.filled{background:linear-gradient(180deg,#4ade80,#22c55e);border-color:rgba(52,211,153,.55);box-shadow:0 0 8px rgba(52,211,153,.28)}
     .live-seg-meta{font-size:.5625rem;color:var(--muted);width:100%;margin-top:.1rem}
+    .ko-extra-panel{margin:.5rem 0;padding:.625rem .75rem;border-radius:.5rem;border:1px solid rgba(212,175,55,.28);background:rgba(212,175,55,.06)}
+    .ko-extra-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.35rem}
+    .ko-extra-badge{font-size:.5625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .5rem;border-radius:9999px;background:rgba(212,175,55,.18);color:var(--gold);border:1px solid rgba(212,175,55,.35)}
+    .ko-extra-clock{font-size:.75rem;font-weight:700;color:var(--gold)}
+    .ko-extra-note{font-size:.625rem;color:var(--muted);line-height:1.45;margin:0}
+    .ko-pen-panel{margin:.5rem 0;padding:.625rem .75rem;border-radius:.5rem;border:1px solid rgba(94,179,246,.25);background:rgba(94,179,246,.05)}
+    .ko-pen-title{font-size:.5625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+    .ko-pen-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem}
+    .ko-pen-row:last-child{margin-bottom:0}
+    .ko-pen-team{min-width:5.5rem;font-size:.625rem;font-weight:600;display:flex;align-items:center;gap:.25rem;flex-shrink:0}
+    .ko-pen-track{display:flex;gap:3px;flex:1;flex-wrap:nowrap;overflow-x:auto;padding-bottom:.1rem}
+    .ko-pen-box{flex:0 0 .625rem;width:.625rem;height:.625rem;border-radius:3px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);transition:background .2s,border-color .2s,box-shadow .2s}
+    .ko-pen-box.scored{background:linear-gradient(180deg,#4ade80,#22c55e);border-color:rgba(52,211,153,.55);box-shadow:0 0 8px rgba(52,211,153,.28)}
+    .ko-pen-box.missed{background:linear-gradient(180deg,#f87171,#ef4444);border-color:rgba(248,113,113,.55);box-shadow:0 0 8px rgba(248,113,113,.22)}
+    .ko-pen-score{font-size:.5625rem;color:var(--muted);margin-left:auto;white-space:nowrap}
+    .match-row-clock.extra-time{color:var(--gold)}
+    .match-row-clock.shootout{color:var(--accent)}
     .match-head{display:flex;flex-direction:column;align-items:stretch;gap:.5rem;width:100%}
     .match-top{display:flex;width:100%;justify-content:space-between;align-items:flex-start;gap:.5rem;min-height:1.375rem}
     .match-status-badge{flex-shrink:0;text-align:left}
@@ -124,11 +163,12 @@
     .win-bar-row:last-child{margin-bottom:0}
     .win-bar-label{display:flex;align-items:center;gap:.375rem;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .win-bar-label.draw-label{color:var(--muted);font-weight:500;justify-content:flex-start}
-    .win-bar-track{height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
-    .win-bar-track>i{display:block;height:100%;border-radius:99px;transition:width .35s ease}
-    .win-bar-row:nth-child(1) .win-bar-track>i{background:linear-gradient(90deg,#5eb3f6,#38bdf8)}
-    .win-bar-row:nth-child(2) .win-bar-track>i{background:linear-gradient(90deg,#94a3b8,#64748b)}
-    .win-bar-row:nth-child(3) .win-bar-track>i{background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+    .win-bar-track{height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:visible;position:relative}
+    .win-bar-track>i{display:block;height:100%;border-radius:99px;transition:width .35s ease;min-width:0;box-shadow:0 0 0 1px rgba(255,255,255,.04)}
+    .win-bar-row.win-home .win-bar-track>i{background:linear-gradient(90deg,#38bdf8,#0ea5e9)}
+    .win-bar-row.win-draw .win-bar-track>i{background:linear-gradient(90deg,#94a3b8,#64748b)}
+    .win-bar-row.win-away .win-bar-track>i{background:linear-gradient(90deg,#c084fc,#a855f7)}
+    .win-bar-tip{cursor:help}
     .win-bar-pct{font-weight:700;color:var(--text);font-size:.625rem;min-width:2rem;text-align:right}
     .skeleton-match{pointer-events:none;border-color:rgba(255,255,255,.04)}
     .review.all-predictions{margin-top:.625rem;padding-top:.625rem;border-top:1px solid var(--border)}
@@ -157,7 +197,9 @@
     .sk-vs{width:1.25rem;height:.625rem;border-radius:3px;opacity:.6}
     .sk-meta{width:55%;height:.625rem;border-radius:3px;margin-top:.125rem}
     @keyframes skShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .match-row-clock.halftime{font-size:.5625rem;color:var(--amber);letter-spacing:.03em;max-width:5.5rem}
+    .team-name.pending{color:var(--muted);font-style:italic}
+    .match-pending-notice{font-size:.75rem;color:var(--muted);text-align:center;padding:.75rem .5rem;line-height:1.45}
+    .ko-market-note{font-size:.625rem;color:var(--muted);margin:-.25rem 0 .5rem;line-height:1.4}
     .live-review{margin-top:.75rem;padding-top:.625rem;border-top:1px solid var(--border)}
     .live-empty{font-size:.6875rem;color:var(--muted);padding:.375rem 0 .25rem}
     .pie-wrap{display:flex;flex-direction:column;align-items:center;gap:.625rem;margin:.625rem 0;position:relative}
@@ -184,6 +226,60 @@
     .alert-err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:#fca5a5}
     .spinner{width:1rem;height:1rem;border:2px solid rgba(94,179,246,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
+    .fab-refresh{position:fixed;right:1rem;bottom:max(1rem,env(safe-area-inset-bottom));z-index:50;width:3rem;height:3rem;border-radius:50%;border:1px solid rgba(94,179,246,.4);background:rgba(18,24,32,.96);color:var(--accent);box-shadow:0 4px 22px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s ease,background .15s ease,opacity .15s ease}
+    .fab-refresh svg{width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .fab-refresh:hover{background:rgba(94,179,246,.14);transform:scale(1.05)}
+    .fab-refresh:active{transform:scale(.96)}
+    .fab-refresh.is-loading svg{animation:spin .7s linear infinite}
+    .fab-refresh:disabled{opacity:.75;cursor:wait}
+    .fab-bracket{position:fixed;left:1rem;bottom:max(1rem,env(safe-area-inset-bottom));z-index:50;width:3rem;height:3rem;border-radius:50%;border:1px solid rgba(212,175,55,.45);background:rgba(18,24,32,.96);color:var(--gold);box-shadow:0 4px 22px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s ease,background .15s ease,opacity .15s ease}
+    .fab-bracket svg{width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .fab-bracket:hover{background:rgba(212,175,55,.12);transform:scale(1.05)}
+    .fab-bracket:active{transform:scale(.96)}
+    .fab-bracket.is-loading svg{animation:spin .7s linear infinite}
+    .fab-bracket:disabled{opacity:.75;cursor:wait}
+    .bracket-overlay{position:fixed;inset:0;background:rgba(5,8,12,.88);backdrop-filter:blur(8px);z-index:90;display:flex;flex-direction:column;padding:0;padding-top:env(safe-area-inset-top)}
+    .bracket-overlay.hidden{display:none}
+    .bracket-grid.hidden,#bracketLoading.hidden{display:none}
+    .bracket-panel{display:flex;flex-direction:column;height:100%;max-height:100vh;background:var(--bg)}
+    .bracket-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;padding:.875rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+    .bracket-header h2{font-size:1rem;font-weight:700;line-height:1.2;margin:0}
+    .bracket-header p{font-size:.6875rem;color:var(--muted);margin:.25rem 0 0}
+    .bracket-close{width:2.25rem;height:2.25rem;border-radius:9999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:1.25rem;line-height:1;cursor:pointer;flex-shrink:0}
+    .bracket-close:hover{background:rgba(255,255,255,.08)}
+    .bracket-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:max(.75rem,env(safe-area-inset-bottom))}
+    .bracket-center-wrap{display:flex;flex-direction:column;align-items:center;min-width:100%;width:max-content;margin:0 auto;padding:0 .65rem 1rem;box-sizing:border-box}
+    .bracket-grid{display:flex;align-items:stretch;gap:.35rem;justify-content:center;margin:0 auto}
+    .brk-half{display:flex;gap:.3rem;align-items:stretch}
+    .brk-half-left .brk-col:first-child .brk-col-head{color:var(--accent)}
+    .brk-half-right .brk-col:last-child .brk-col-head{color:var(--accent)}
+    .brk-col{display:flex;flex-direction:column;min-width:8rem;max-width:9.25rem}
+    .brk-col.is-active-phase .brk-col-head{color:var(--gold);border-color:rgba(212,175,55,.35)}
+    .brk-col-head{font-size:.5625rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:.35rem .25rem;margin-bottom:.35rem;border-bottom:1px solid rgba(255,255,255,.08);color:var(--muted);flex-shrink:0}
+    .brk-col-body{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:.3rem;min-height:28rem}
+    .brk-center{min-width:8rem;max-width:9rem;align-self:stretch}
+    .brk-center .brk-col-body{min-height:auto;justify-content:flex-start;gap:.65rem}
+    .brk-final-head{margin-top:.5rem}
+    .brk-match{width:100%;text-align:left;padding:.4rem .45rem;border-radius:.45rem;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);cursor:pointer;font-family:inherit;color:inherit;transition:border-color .15s,background .15s,box-shadow .15s}
+    .brk-match:hover{border-color:rgba(94,179,246,.35);background:rgba(94,179,246,.06)}
+    .brk-match.is-today{border-color:rgba(212,175,55,.45);box-shadow:0 0 0 1px rgba(212,175,55,.12)}
+    .brk-match.is-live{border-color:rgba(74,222,128,.45);animation:brkPulse 2s ease infinite}
+    @keyframes brkPulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.15)}50%{box-shadow:0 0 0 3px rgba(74,222,128,.08)}}
+    .brk-num{display:block;font-size:.5rem;color:var(--muted);margin-bottom:.1rem;letter-spacing:.04em}
+    .brk-date{display:block;font-size:.5rem;color:var(--muted);margin-bottom:.22rem;line-height:1.25}
+    .brk-team{display:flex;align-items:center;gap:.5rem;font-size:.625rem;line-height:1.35;padding:.08rem 0;min-height:1.05rem}
+    .brk-team.is-winner{font-weight:700;color:var(--green)}
+    .brk-team.is-pending .brk-name{color:rgba(139,152,168,.45);font-style:italic}
+    .brk-flag{width:.875rem;height:.625rem;object-fit:cover;border-radius:1px;flex-shrink:0}
+    .brk-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .brk-goals{font-weight:700;font-size:.6875rem;color:var(--text);min-width:1rem;text-align:right}
+    .brk-loading{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:3rem 1rem;color:var(--muted);font-size:.8125rem}
+    .brk-legend{display:flex;flex-wrap:wrap;gap:.5rem .75rem;padding:0 1rem .65rem;font-size:.5625rem;color:var(--muted);flex-shrink:0}
+    .brk-legend span{display:inline-flex;align-items:center;gap:.25rem}
+    .brk-legend i{display:inline-block;width:.5rem;height:.5rem;border-radius:2px;border:1px solid rgba(212,175,55,.45)}
+    .brk-legend i.live{border-color:rgba(74,222,128,.5);background:rgba(74,222,128,.15)}
+    .bracket-header-actions{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+    .btn-bracket-pdf{font-size:.6875rem;padding:.4rem .65rem;white-space:nowrap}
     .cal-card{padding:.65rem .75rem;background:linear-gradient(180deg,rgba(94,179,246,.07) 0%,var(--card) 55%);border-color:rgba(94,179,246,.14)}
     .cal-strip{display:flex;align-items:center;gap:.625rem}
     .cal-btn{width:2.5rem;height:2.5rem;padding:0;border-radius:9999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s,color .15s,transform .12s}
@@ -215,13 +311,26 @@
     .tutorial-skip{font-size:.6875rem;color:var(--muted);background:0;border:0;cursor:pointer;padding:.35rem;font-family:inherit}
     .tutorial-skip:hover{color:var(--text)}
     .btn-help{font-size:.625rem;padding:.35rem .5rem;opacity:.85}
+    .btn-nav-back{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .install-sheet{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end;justify-content:center;padding:1rem;padding-bottom:max(1rem,env(safe-area-inset-bottom));background:rgba(3,6,10,.72);backdrop-filter:blur(6px)}
+    .install-sheet.hidden{display:none}
+    .install-card{width:min(100%,24rem);background:var(--card);border:1px solid var(--border);border-radius:.875rem;padding:1rem;box-shadow:0 16px 40px rgba(0,0,0,.45)}
+    .install-card h2{font-size:1rem;font-weight:700;margin-bottom:.35rem}
+    .install-card p{font-size:.75rem;color:var(--muted);line-height:1.45;margin-bottom:.75rem}
+    .install-steps{list-style:none;display:flex;flex-direction:column;gap:.45rem;margin:.75rem 0;font-size:.75rem;line-height:1.4}
+    .install-steps li{display:flex;gap:.5rem;align-items:flex-start}
+    .install-steps span{flex-shrink:0;width:1.25rem;height:1.25rem;border-radius:999px;background:rgba(94,179,246,.15);color:var(--accent);font-size:.625rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+    .install-actions{display:flex;gap:.5rem;margin-top:.875rem}
+    .install-actions .btn{flex:1;justify-content:center}
+    .install-platform{font-size:.625rem;color:var(--gold);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem}
     #daySummary{text-align:center}
   </style>
 </head>
 <body>
-  <header>
+  <header id="siteHeader">
     <div class="wrap" style="padding-bottom:0">
-      <div class="header-top">
+      <div class="header-bar" id="headerBar">
+        <div class="header-top">
         <div class="brand">
           <img src="/HomeCodedLogo-svg.svg" alt="HomeCoded" class="site-logo" width="40" height="40">
           <div>
@@ -230,8 +339,10 @@
           </div>
         </div>
         <div class="header-actions">
+          <button type="button" class="btn btn-nav-back" id="btnNavBack" aria-label="Volver">← Volver</button>
           <button type="button" class="btn btn-help" id="btnHelp" title="Ver tutorial" aria-label="Ver tutorial">?</button>
           <button type="button" class="btn btn-accent" id="btnToggleList">Ver lista (<span id="betBadge">0</span>)</button>
+        </div>
         </div>
       </div>
       <div class="bet-drawer" id="betDrawer">
@@ -269,6 +380,60 @@
   </div>
   <div id="pieTooltip" class="pie-tooltip hidden" role="tooltip" aria-hidden="true"></div>
 
+  <div class="install-sheet hidden" id="installSheet" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+    <div class="install-card">
+      <p class="install-platform" id="installPlatform">Instalar app</p>
+      <h2 id="installTitle">Añadir HomeCoded al inicio</h2>
+      <p id="installIntro">Accede al Mundial 2026 con un toque, como una app nativa.</p>
+      <div id="installAndroid" style="display:none">
+        <button type="button" class="btn btn-primary" id="btnInstallApp" style="width:100%;margin-bottom:.75rem">Instalar en este dispositivo</button>
+        <p style="font-size:.6875rem;color:var(--muted);margin:0">Si no aparece el botón, abre el menú ⋮ de Chrome y elige «Instalar aplicación».</p>
+      </div>
+      <ol class="install-steps" id="installIos" style="display:none">
+        <li><span>1</span><div>Toca el botón <strong>Compartir</strong> (cuadrado con flecha) en Safari.</div></li>
+        <li><span>2</span><div>Elige <strong>Añadir a pantalla de inicio</strong>.</div></li>
+        <li><span>3</span><div>Confirma con <strong>Añadir</strong> arriba a la derecha.</div></li>
+      </ol>
+      <div class="install-actions">
+        <button type="button" class="btn" id="btnInstallLater">Ahora no</button>
+        <button type="button" class="btn btn-accent" id="btnInstallShare">Copiar enlace</button>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="fab-bracket" id="btnBracketFab" aria-label="Cuadro eliminatorio" title="Cuadro eliminatorio">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22v-3a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v3"/><path d="M12 11V6"/><path d="M8 6h8"/></svg>
+  </button>
+
+  <button type="button" class="fab-refresh" id="btnRefreshFab" aria-label="Actualizar datos" title="Actualizar datos">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+  </button>
+
+  <div class="bracket-overlay hidden" id="bracketOverlay" role="dialog" aria-modal="true" aria-labelledby="bracketTitle">
+    <div class="bracket-panel">
+      <header class="bracket-header">
+        <div>
+          <h2 id="bracketTitle">Cuadro eliminatorio</h2>
+          <p id="bracketSub">Mundial 2026 · 32 equipos</p>
+        </div>
+        <div class="bracket-header-actions">
+          <button type="button" class="btn btn-primary btn-bracket-pdf" id="btnBracketPdf" disabled>Descargar PDF</button>
+          <button type="button" class="bracket-close" id="btnCloseBracket" aria-label="Cerrar cuadro">&times;</button>
+        </div>
+      </header>
+      <div class="brk-legend">
+        <span><i></i> Partido del día</span>
+        <span><i class="live"></i> En vivo</span>
+      </div>
+      <div class="bracket-scroll" id="bracketScroll">
+        <div class="bracket-center-wrap">
+          <div class="brk-loading" id="bracketLoading"><span class="spinner"></span> Cargando cuadro…</div>
+          <div class="bracket-grid hidden" id="bracketGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="tutorial-overlay hidden" id="tutorialOverlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
     <div class="tutorial-card">
       <p class="tutorial-step" id="tutorialStepLabel">Paso 1 de 5</p>
@@ -286,40 +451,141 @@
 
   <script>
     const API_URL = '/api/matches/today';
+    const BRACKET_API = '/api/bracket/knockout';
+    const BRACKET_PHASES = ['round-of-32', 'round-of-16', 'quarter-finals', 'semi-finals'];
+    const BRACKET_PHASE_NAMES = {
+      'round-of-32': 'Dieciseisavos de final',
+      'round-of-16': 'Octavos de final',
+      'quarter-finals': 'Cuartos de final',
+      'semi-finals': 'Semifinales',
+      'third-place': 'Tercer puesto',
+      final: 'Final',
+      finished: 'Torneo concluido',
+    };
+    const SOFA_WC = { tournamentId: 16, seasonId: 58210 };
+    const SOFA_HEADERS = {
+      Accept: 'application/json, text/plain, */*',
+      Origin: 'https://www.sofascore.com',
+      Referer: 'https://www.sofascore.com/',
+    };
     const PIE_COLORS = ['#34d399','#5eb3f6','#a78bfa','#fbbf24','#fb7185','#38bdf8','#4ade80','#f472b6','#94a3b8','#fcd34d'];
     const PDF = { bg:[11,15,20], card:[18,24,32], accent:[94,179,246], gold:[212,175,55], green:[52,211,153], amber:[251,191,36], red:[248,113,113], muted:[139,152,168], text:[232,237,242] };
+    const PDF_BRACKET = {
+      bg:[15,23,42],
+      card:[30,41,59],
+      cardBorder:[51,65,85],
+      line:[148,163,184],
+      accent:[94,179,246],
+      gold:[212,175,55],
+      green:[52,211,153],
+      muted:[139,152,168],
+      mutedDim:[67,77,95],
+      footerText:[170,180,192],
+      text:[232,237,242],
+    };
+    const BRACKET_PDF_RADIUS = 2.2;
+    const BRACKET_PDF_BOX_H = 14;
+    const BRACKET_PDF_FEEDS = {
+      90:[73,74], 89:[75,77], 93:[81,82], 94:[83,84],
+      97:[90,89], 98:[93,94], 101:[97,98],
+      91:[76,78], 92:[79,80], 95:[85,87], 96:[86,88],
+      99:[91,92], 100:[95,96], 102:[99,100],
+      104:[101,102],
+    };
     const BET_KEY = 'hc_mi_apuesta';
     const TUTORIAL_KEY = 'hc_tutorial_v1';
     let matchesData = [];
     let myBets = JSON.parse(localStorage.getItem(BET_KEY) || '[]');
     const LIVE_CFG = { FH:45, FH_ADD:6, HT:15, SH:45, SH_ADD:8 };
 
-    function clientLiveClock(kickoffUtc, now = Date.now()){
+    function clientLiveClock(kickoffUtc, knockout, now = Date.now()){
+      if(knockout?.display){
+        return {
+          display: knockout.display,
+          isHalftime: knockout.etPhase === 'et_halftime',
+          isExtraTime: !!knockout.showExtraTime,
+          isShootout: !!knockout.showShootout,
+        };
+      }
       const elapsed = Math.max(0, Math.floor((now - new Date(kickoffUtc).getTime()) / 60000));
       const htWhistle = LIVE_CFG.FH + LIVE_CFG.FH_ADD;
       const shKick = htWhistle + LIVE_CFG.HT;
       const shEnd = shKick + LIVE_CFG.SH;
       const shWhistle = shEnd + LIVE_CFG.SH_ADD;
-      if(elapsed >= shWhistle) return { display:`90+${LIVE_CFG.SH_ADD}'`, isHalftime:false };
-      if(elapsed >= shEnd) return { display:`90+${elapsed - shEnd + 1}'`, isHalftime:false };
-      if(elapsed >= shKick) return { display:`${46 + elapsed - shKick}'`, isHalftime:false };
-      if(elapsed >= htWhistle) return { display:'ENTRETIEMPO', isHalftime:true };
-      if(elapsed >= LIVE_CFG.FH) return { display:`45+${elapsed - LIVE_CFG.FH + 1}'`, isHalftime:false };
-      return { display:`${Math.max(1, elapsed + 1)}'`, isHalftime:false };
+      if(elapsed >= shWhistle) return { display:`90+${LIVE_CFG.SH_ADD}'`, isHalftime:false, isExtraTime:false, isShootout:false };
+      if(elapsed >= shEnd) return { display:`90+${elapsed - shEnd + 1}'`, isHalftime:false, isExtraTime:false, isShootout:false };
+      if(elapsed >= shKick) return { display:`${46 + elapsed - shKick}'`, isHalftime:false, isExtraTime:false, isShootout:false };
+      if(elapsed >= htWhistle) return { display:'ENTRETIEMPO', isHalftime:true, isExtraTime:false, isShootout:false };
+      if(elapsed >= LIVE_CFG.FH) return { display:`45+${elapsed - LIVE_CFG.FH + 1}'`, isHalftime:false, isExtraTime:false, isShootout:false };
+      return { display:`${Math.max(1, elapsed + 1)}'`, isHalftime:false, isExtraTime:false, isShootout:false };
+    }
+
+    function renderPenaltyBoxes(shots){
+      if(!shots?.length) return '';
+      return shots.map(shot=>{
+        if(!shot) return '<span class="ko-pen-box" aria-hidden="true"></span>';
+        const cls = shot.scored === true ? ' scored' : shot.scored === false ? ' missed' : '';
+        return `<span class="ko-pen-box${cls}" aria-hidden="true"></span>`;
+      }).join('');
+    }
+
+    function renderKnockoutExtra(m){
+      const ko = m.live?.knockout || m.knockout;
+      if(!ko?.showExtraTime) return '';
+      const score = m.score ? `${m.score.home}-${m.score.away}` : '—';
+      return `<div class="ko-extra-panel">
+        <div class="ko-extra-head">
+          <span class="ko-extra-badge">${esc(ko.etLabel || 'PRÓRROGA')}</span>
+          <span class="ko-extra-clock">${esc(ko.display || '')}</span>
+        </div>
+        <p class="ko-extra-note">Eliminatoria en prórroga · marcador actual ${esc(score)}. Las predicciones siguen evaluándose sobre el resultado en 90 min.</p>
+      </div>`;
+    }
+
+    function renderKnockoutPenalties(m){
+      const ko = m.live?.knockout || m.knockout;
+      if(!ko?.showShootout || !ko.shootout) return '';
+      const penScore = (ko.penHome != null && ko.penAway != null)
+        ? `${ko.penHome}-${ko.penAway}`
+        : '';
+      const penTitle = m.status === 'live' ? 'Tanda de penales · en vivo' : 'Tanda de penales';
+      return `<div class="ko-pen-panel">
+        <div class="ko-pen-title">${esc(penTitle)}</div>
+        <div class="ko-pen-row">
+          <span class="ko-pen-team">${flagImg(m.home)} ${esc(m.home.name)}</span>
+          <div class="ko-pen-track">${renderPenaltyBoxes(ko.shootout.home)}</div>
+          ${penScore ? `<span class="ko-pen-score">${ko.penHome ?? 0}</span>` : ''}
+        </div>
+        <div class="ko-pen-row">
+          <span class="ko-pen-team">${flagImg(m.away)} ${esc(m.away.name)}</span>
+          <div class="ko-pen-track">${renderPenaltyBoxes(ko.shootout.away)}</div>
+          ${penScore ? `<span class="ko-pen-score">${ko.penAway ?? 0}</span>` : ''}
+        </div>
+      </div>`;
     }
 
     function tickLiveDisplays(){
       document.querySelectorAll('.match[data-live="1"]').forEach(el=>{
         const kickoff = el.dataset.kickoff;
         if(!kickoff) return;
-        const c = clientLiveClock(kickoff);
+        const m = matchesData.find(x => String(x.id) === el.dataset.id);
+        const ko = m?.live?.knockout;
+        const c = clientLiveClock(kickoff, ko);
         const lbl = el.querySelector('.match-row-clock');
         if(lbl){
           lbl.textContent = c.display;
           lbl.classList.toggle('halftime', c.isHalftime);
+          lbl.classList.toggle('extra-time', c.isExtraTime);
+          lbl.classList.toggle('shootout', c.isShootout);
         }
         const liveBtn = el.querySelector('.view-switch button[data-view="live"]');
-        if(liveBtn) liveBtn.textContent = `En vivo · ${c.display}`;
+        if(liveBtn){
+          liveBtn.textContent = isInPenaltyShootout(m)
+            ? 'En vivo · Tanda de penales'
+            : `En vivo · ${c.display}`;
+        }
+        const badge = el.querySelector('.match-status-badge');
+        if(badge && m) badge.innerHTML = statusBadgeHtml(m);
       });
     }
 
@@ -343,11 +609,19 @@
       };
     }
 
+    function isInPenaltyShootout(m){
+      const ko = m?.live?.knockout || m?.knockout;
+      return !!(m?.status === 'live' && ko?.showShootout);
+    }
+
     function statusBadgeHtml(m, now = Date.now()){
       if(m.status === 'finished'){
         return '<span class="pill finished"><span class="status-dot" aria-hidden="true"></span>FINALIZADO</span>';
       }
       if(m.status === 'live'){
+        if(isInPenaltyShootout(m)){
+          return '<span class="pill live shootout"><span class="status-dot" aria-hidden="true"></span>EN TANDA DE PENALES</span>';
+        }
         return '<span class="pill live"><span class="status-dot" aria-hidden="true"></span>En vivo</span>';
       }
       const cd = kickoffCountdown(m.kickoffUtc, now);
@@ -370,12 +644,315 @@
     let clockTimer = null;
     let scheduleTimer = null;
     let oddsTimer = null;
+    let dailyRefreshTimer = null;
+    let isRefreshing = false;
+    let viewingToday = true;
     const ODDS_REFRESH_MS = 10 * 60 * 1000;
     let listOpen = false;
     let currentDate = null;
     let tournamentMin = null;
     let tournamentMax = null;
     let eventsBound = false;
+    let navApplying = false;
+    let navReady = false;
+
+    function getOpenMatchId(){
+      const open = document.querySelector('.match.is-open');
+      return open ? Number(open.dataset.id) : null;
+    }
+
+    function snapshotNavState(){
+      return {
+        date: currentDate || null,
+        matchId: getOpenMatchId(),
+        bracket: bracketOpen,
+        betList: listOpen,
+      };
+    }
+
+    function navStatesEqual(a, b){
+      if(!a || !b) return false;
+      return a.date === b.date
+        && a.matchId === b.matchId
+        && !!a.bracket === !!b.bracket
+        && !!a.betList === !!b.betList
+        && !!a.returnToBracket === !!b.returnToBracket;
+    }
+
+    function buildNavUrl(state){
+      const params = new URLSearchParams();
+      if(state.date) params.set('date', state.date);
+      if(state.matchId) params.set('match', String(state.matchId));
+      if(state.bracket) params.set('cuadro', '1');
+      if(state.betList) params.set('lista', '1');
+      const qs = params.toString();
+      return `${location.pathname}${qs ? `?${qs}` : ''}`;
+    }
+
+    function updateBackButton(){
+      /* Navegación solo por historial del navegador y Escape; botón oculto visualmente. */
+    }
+
+    function pushNavState(state){
+      if(navApplying || !navReady) return;
+      const next = {
+        date: state.date ?? currentDate ?? null,
+        matchId: state.matchId ?? null,
+        bracket: !!state.bracket,
+        betList: !!state.betList,
+        returnToBracket: !!state.returnToBracket,
+      };
+      if(navStatesEqual(next, history.state)) return;
+      history.pushState(next, '', buildNavUrl(next));
+      updateBackButton();
+    }
+
+    function replaceNavState(state){
+      const next = {
+        date: state.date ?? currentDate ?? null,
+        matchId: state.matchId ?? null,
+        bracket: !!state.bracket,
+        betList: !!state.betList,
+        returnToBracket: !!state.returnToBracket,
+      };
+      history.replaceState(next, '', buildNavUrl(next));
+      updateBackButton();
+    }
+
+    function closeAllMatches(){
+      document.querySelectorAll('.match.is-open').forEach((n)=>{
+        n.classList.remove('is-open');
+        n.querySelector('.match-body').hidden = true;
+      });
+    }
+
+    function openMatchById(id, { scroll = false } = {}){
+      const el = document.getElementById(`match-${id}`);
+      if(!el) return false;
+      closeAllMatches();
+      el.classList.add('is-open');
+      el.querySelector('.match-body').hidden = false;
+      if(scroll){
+        requestAnimationFrame(()=>{
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+      return true;
+    }
+
+    async function applyNavState(state){
+      if(!state) state = { date: null, matchId: null, bracket: false, betList: false };
+      navApplying = true;
+      try {
+        if(state.bracket){
+          if(!bracketOpen) openBracketPanel(true);
+        } else if(bracketOpen){
+          closeBracketPanel(true);
+        }
+
+        if(!!state.betList !== listOpen){
+          listOpen = !!state.betList;
+          document.getElementById('betDrawer').classList.toggle('open', listOpen);
+        }
+
+        const needLoad = state.date !== currentDate
+          || (state.matchId && !document.getElementById(`match-${state.matchId}`));
+        if(needLoad){
+          await loadMatches(state.date || undefined, false);
+          await new Promise((r)=> requestAnimationFrame(()=> requestAnimationFrame(r)));
+        }
+
+        closeAllMatches();
+        if(state.matchId){
+          openMatchById(state.matchId, { scroll: true });
+        }
+
+        updateBackButton();
+      } finally {
+        navApplying = false;
+      }
+    }
+
+    function closeBracketFromUi(){
+      if(!bracketOpen) return;
+      closeBracketPanel(true);
+      if(navReady){
+        replaceNavState({
+          date: currentDate,
+          matchId: getOpenMatchId(),
+          bracket: false,
+          betList: listOpen,
+        });
+      }
+      updateBackButton();
+    }
+
+    function goBack(){
+      const current = history.state;
+      if(current?.returnToBracket){
+        applyNavState({
+          date: current.date,
+          matchId: null,
+          bracket: true,
+          betList: !!current.betList,
+        });
+        replaceNavState(snapshotNavState());
+        return;
+      }
+      if(bracketOpen){
+        closeBracketFromUi();
+        return;
+      }
+      if(listOpen){
+        listOpen = false;
+        document.getElementById('betDrawer').classList.remove('open');
+        replaceNavState(snapshotNavState());
+        updateBackButton();
+        return;
+      }
+      if(getOpenMatchId()){
+        if(history.length > 1) history.back();
+        else {
+          closeAllMatches();
+          replaceNavState(snapshotNavState());
+        }
+        return;
+      }
+      if(history.length > 1) history.back();
+      else applyNavState({ date: null, matchId: null, bracket: false, betList: false });
+    }
+
+    function initNavigation(){
+      window.addEventListener('popstate', (e)=>{
+        applyNavState(e.state || { date: null, matchId: null, bracket: false, betList: false });
+      });
+    }
+
+    const INSTALL_SHARE_URL = `${location.origin}/instalar`;
+    let deferredInstallPrompt = null;
+
+    function isIosDevice(){
+      return /iphone|ipad|ipod/i.test(navigator.userAgent);
+    }
+
+    function isInstalledPwa(){
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function shouldOpenInstallSheet(){
+      return location.pathname === '/instalar'
+        || new URLSearchParams(location.search).get('instalar') === '1';
+    }
+
+    function closeInstallSheet(){
+      document.getElementById('installSheet')?.classList.add('hidden');
+    }
+
+    function showInstallSheet(){
+      if(isInstalledPwa()){
+        closeInstallSheet();
+        if(location.pathname === '/instalar'){
+          history.replaceState(history.state, '', buildNavUrl(history.state || snapshotNavState()));
+        }
+        return;
+      }
+
+      const sheet = document.getElementById('installSheet');
+      const android = document.getElementById('installAndroid');
+      const ios = document.getElementById('installIos');
+      const platform = document.getElementById('installPlatform');
+      const intro = document.getElementById('installIntro');
+      if(!sheet || !android || !ios) return;
+
+      const btnInstall = document.getElementById('btnInstallApp');
+      const iosDevice = isIosDevice();
+      if(iosDevice){
+        android.style.display = 'none';
+        ios.style.display = 'block';
+        platform.textContent = 'iPhone / iPad';
+      } else {
+        android.style.display = 'block';
+        ios.style.display = 'none';
+        platform.textContent = 'Android';
+        if(btnInstall) btnInstall.style.display = deferredInstallPrompt ? 'block' : 'none';
+      }
+      intro.textContent = iosDevice
+        ? 'Safari no permite instalar con un solo toque: sigue estos pasos y quedará en tu pantalla de inicio.'
+        : 'Instala HomeCoded Analytics en tu teléfono para abrirla como app nativa.';
+
+      sheet.classList.remove('hidden');
+    }
+
+    async function copyInstallLink(){
+      try {
+        await navigator.clipboard.writeText(INSTALL_SHARE_URL);
+        alert('Enlace copiado. Compártelo con tus amigos para que instalen la app.');
+      } catch {
+        prompt('Copia este enlace para compartir:', INSTALL_SHARE_URL);
+      }
+    }
+
+    function initPwaInstall(){
+      window.addEventListener('beforeinstallprompt', (e)=>{
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if(shouldOpenInstallSheet()) showInstallSheet();
+      });
+
+      document.getElementById('btnInstallApp')?.addEventListener('click', async ()=>{
+        if(!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice.catch(()=>{});
+        deferredInstallPrompt = null;
+        closeInstallSheet();
+      });
+      document.getElementById('btnInstallLater')?.addEventListener('click', ()=>{
+        closeInstallSheet();
+        if(location.pathname === '/instalar'){
+          history.replaceState(history.state, '', buildNavUrl(history.state || snapshotNavState()));
+        }
+      });
+      document.getElementById('btnInstallShare')?.addEventListener('click', copyInstallLink);
+      document.getElementById('installSheet')?.addEventListener('click', (e)=>{
+        if(e.target.id === 'installSheet') closeInstallSheet();
+      });
+
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.register('/sw.js').catch(()=>{});
+      }
+
+      if(shouldOpenInstallSheet()) showInstallSheet();
+    }
+
+    function initHeaderAutoHide(){
+      const header = document.getElementById('siteHeader');
+      if(!header) return;
+      let lastY = window.scrollY;
+      let ticking = false;
+      const threshold = 56;
+
+      window.addEventListener('scroll', ()=>{
+        if(ticking) return;
+        ticking = true;
+        requestAnimationFrame(()=>{
+          const y = window.scrollY;
+          const scrollingDown = y > lastY && y > threshold;
+          const scrollingUp = y < lastY;
+          const blocked = listOpen || bracketOpen;
+
+          if(blocked){
+            header.classList.remove('header-collapsed');
+          } else if(scrollingDown){
+            header.classList.add('header-collapsed');
+          } else if(scrollingUp || y <= threshold){
+            header.classList.remove('header-collapsed');
+          }
+
+          lastY = y;
+          ticking = false;
+        });
+      }, { passive: true });
+    }
 
     function addDaysIso(iso, n){
       const [y,m,d]=iso.split('-').map(Number);
@@ -506,26 +1083,68 @@
         </article>`).join('');
     }
 
+    function barWidth(value, max){
+      const n = Number(value) || 0;
+      const pct = max > 0 ? (n / max) * 100 : 0;
+      return n > 0 ? `max(${pct}%, 6px)` : '0';
+    }
+
     function renderWinOutlook(m){
       const w = m.analysis?.winOutlook;
       if(!w) return '';
+      const homeTip = `${m.home.name} gana en 90 min según el modelo HomeCoded (forma, dominio y fuerza relativa).`;
+      const drawTip = 'Probabilidad de empate al final del tiempo reglamentario (90 min).';
+      const awayTip = `${m.away.name} gana en 90 min según el modelo HomeCoded (forma, dominio y fuerza relativa).`;
       return `<div class="win-outlook">
         <div class="win-outlook-title">Probabilidad de resultado · modelo HomeCoded</div>
-        <div class="win-bar-row">
+        <div class="win-bar-row win-home win-bar-tip" data-tip-title="Victoria local" data-tip-text="${esc(homeTip)} · ${w.home}%">
           <span class="win-bar-label">${flagImg(m.home)} ${esc(m.home.name)}</span>
-          <div class="win-bar-track"><i style="width:${w.home}%"></i></div>
+          <div class="win-bar-track"><i style="width:${barWidth(w.home, 100)}"></i></div>
           <span class="win-bar-pct">${w.home}%</span>
         </div>
-        <div class="win-bar-row">
+        <div class="win-bar-row win-draw win-bar-tip" data-tip-title="Empate" data-tip-text="${esc(drawTip)} · ${w.draw}%">
           <span class="win-bar-label draw-label">Empate</span>
-          <div class="win-bar-track"><i style="width:${w.draw}%"></i></div>
+          <div class="win-bar-track"><i style="width:${barWidth(w.draw, 100)}"></i></div>
           <span class="win-bar-pct">${w.draw}%</span>
         </div>
-        <div class="win-bar-row">
+        <div class="win-bar-row win-away win-bar-tip" data-tip-title="Victoria visitante" data-tip-text="${esc(awayTip)} · ${w.away}%">
           <span class="win-bar-label">${flagImg(m.away)} ${esc(m.away.name)}</span>
-          <div class="win-bar-track"><i style="width:${w.away}%"></i></div>
+          <div class="win-bar-track"><i style="width:${barWidth(w.away, 100)}"></i></div>
           <span class="win-bar-pct">${w.away}%</span>
         </div>
+      </div>`;
+    }
+
+    function renderCornerBars(m, homeVal, awayVal, totalVal, isActual){
+      const maxC = Math.max(homeVal, awayVal, 1);
+      const homeLabel = isActual ? 'Córners · local (real)' : 'Córners · local (proyección)';
+      const awayLabel = isActual ? 'Córners · visitante (real)' : 'Córners · visitante (proyección)';
+      const homeTip = isActual
+        ? `Córners a favor de ${m.home.name} en este partido.`
+        : `Proyección de córners para ${m.home.name} según promedios históricos y rival.`;
+      const awayTip = isActual
+        ? `Córners a favor de ${m.away.name} en este partido.`
+        : `Proyección de córners para ${m.away.name} según promedios históricos y rival.`;
+      const homeDisplay = isActual ? homeVal : tip(homeVal, homeTip);
+      const awayDisplay = isActual ? awayVal : tip(awayVal, awayTip);
+      const totalDisplay = isActual ? totalVal : tip(totalVal, 'Total proyectado de córners en el partido.');
+      return `
+          <div class="stat-row"><span>${flagImg(m.home)} ${esc(m.home.name)}</span><span>${homeDisplay}</span></div>
+          <div class="bar-tip bar-home" data-tip-title="${esc(homeLabel)}" data-tip-text="${esc(homeTip)} Valor: ${homeVal}.">
+            <div class="bar bar-home"><i style="width:${barWidth(homeVal, maxC)}"></i></div>
+          </div>
+          <div class="stat-row" style="margin-top:.375rem"><span>${flagImg(m.away)} ${esc(m.away.name)}</span><span>${awayDisplay}</span></div>
+          <div class="bar-tip bar-away" data-tip-title="${esc(awayLabel)}" data-tip-text="${esc(awayTip)} Valor: ${awayVal}.">
+            <div class="bar bar-away"><i style="width:${barWidth(awayVal, maxC)}"></i></div>
+          </div>
+          <div class="stat-row" style="margin-top:.375rem"><span>Total</span><strong>${totalDisplay}</strong></div>`;
+    }
+
+    function renderShotsTeamBox(team, players){
+      const rows = players.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${tip(p.projected,'Promedio de disparos a puerta por partido en el Mundial 2026 (solo partidos de esta copa, sin datos de clubes).')}</td></tr>`).join('');
+      return `<div class="shots-team-box">
+        <div class="shots-team-head">${flagImg(team)} ${esc(team.name)}</div>
+        <table><thead><tr><th>Jugador</th><th class="num">Promedio Jugador</th></tr></thead><tbody>${rows}</tbody></table>
       </div>`;
     }
 
@@ -677,32 +1296,50 @@
       }
     }
 
-    function drawPdfFooter(doc, W, margin){
+    function drawPdfFooter(doc, W, margin, options = {}){
+      const colors = options.colors || PDF;
       const pageH = doc.internal.pageSize.getHeight();
-      const footerH = 20;
+      const compact = !!(options.compact || options.singleLine);
+      const footerH = compact ? 11 : 20;
       const y0 = pageH - footerH;
-      doc.setFillColor(...PDF.bg);
+      const line1 = options.line1 || 'Líneas conservadoras para mayor tasa de acierto';
+      const line2 = options.line2 || 'homecoded-analytics.vercel.app';
+      const line3 = options.line3 || 'Cuotas Betano de referencia · no influyen en el modelo';
+      doc.setFillColor(...colors.bg);
       doc.rect(0, y0, W, footerH, 'F');
-      doc.setDrawColor(55, 65, 75);
+      doc.setDrawColor(...(colors.cardBorder || [55, 65, 75]));
       doc.setLineWidth(0.15);
       doc.line(margin, y0, W - margin, y0);
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(7);
-      doc.setTextColor(...PDF.muted);
-      doc.text('Líneas conservadoras para mayor tasa de acierto', W / 2, y0 + 5.5, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      doc.setTextColor(...PDF.accent);
-      doc.text('homecoded-analytics.vercel.app', W / 2, y0 + 10, { align: 'center' });
-      doc.setFontSize(5.5);
-      doc.setTextColor(...PDF.muted);
-      doc.text('Cuotas Betano de referencia · no influyen en el modelo', W / 2, y0 + 14.5, { align: 'center' });
+      if(compact){
+        const text = options.text || [line1, line2, line3].filter(Boolean).join(' * ');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.8);
+        doc.setTextColor(...(colors.footerText || colors.muted));
+        const lines = doc.splitTextToSize(text, W - margin * 2);
+        doc.text(lines, W / 2, y0 + (lines.length > 1 ? 4.2 : 6.2), { align: 'center' });
+      } else {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7);
+        doc.setTextColor(...colors.muted);
+        doc.text(line1, W / 2, y0 + 5.5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...colors.accent);
+        doc.text(line2, W / 2, y0 + 10, { align: 'center' });
+        doc.setFontSize(5.5);
+        doc.setTextColor(...colors.muted);
+        doc.text(line3, W / 2, y0 + 14.5, { align: 'center' });
+      }
       return y0 - 4;
     }
 
-    function drawPdfHeader(doc, W, margin, logoData, isFirstPage){
+    function drawPdfHeader(doc, W, margin, logoData, options = {}){
+      const colors = options.colors || PDF;
+      const isFirstPage = options.isFirstPage !== false;
+      const title = options.title || 'Reporte de Predicciones - Mundial FIFA 2026';
+      const showGenerated = options.showGenerated !== false;
       const headerH = isFirstPage ? 40 : 15;
-      doc.setFillColor(...PDF.bg);
+      doc.setFillColor(...colors.bg);
       doc.rect(0, 0, W, headerH, 'F');
 
       const logoSize = isFirstPage ? 12 : 8;
@@ -714,31 +1351,33 @@
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(isFirstPage ? 13 : 9);
-      doc.setTextColor(...PDF.text);
+      doc.setTextColor(...colors.text);
       doc.text('HomeCoded Analytics', logoX + (logoData ? logoSize + 3 : 0), isFirstPage ? 16 : 9);
 
       if(isFirstPage){
-        doc.setFontSize(14);
-        doc.setTextColor(...PDF.text);
-        doc.text('Reporte de Predicciones - Mundial FIFA 2026', W / 2, 27, { align: 'center' });
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(8);
-        doc.setTextColor(...PDF.muted);
-        const gen = new Date().toLocaleString('es-CO', {
-          timeZone: 'America/Bogota',
-          day: 'numeric',
-          month: 'numeric',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-        doc.text(`Generado: ${gen} COT`, W / 2, 33.5, { align: 'center' });
-        doc.setFillColor(...PDF.gold);
+        doc.setFontSize(options.titleSize || 14);
+        doc.setTextColor(...colors.text);
+        doc.text(title, W / 2, 27, { align: 'center' });
+        if(showGenerated){
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8);
+          doc.setTextColor(...colors.muted);
+          const gen = new Date().toLocaleString('es-CO', {
+            timeZone: 'America/Bogota',
+            day: 'numeric',
+            month: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          doc.text(`Generado: ${gen} COT`, W / 2, 33.5, { align: 'center' });
+        }
+        doc.setFillColor(...colors.gold);
         doc.rect(0, 37, W, 0.7, 'F');
         return 44;
       }
 
-      doc.setFillColor(...PDF.gold);
+      doc.setFillColor(...colors.gold);
       doc.rect(0, 14, W, 0.4, 'F');
       return 19;
     }
@@ -828,7 +1467,7 @@
         const W = doc.internal.pageSize.getWidth();
         const margin = 14;
         const footerTop = () => doc.internal.pageSize.getHeight() - 20;
-        let y = drawPdfHeader(doc, W, margin, logoData, true);
+        let y = drawPdfHeader(doc, W, margin, logoData, { isFirstPage: true });
 
         doc.setTextColor(...PDF.text);
         doc.setFont('helvetica', 'bold');
@@ -842,7 +1481,7 @@
           if(y + blockH > footerTop()){
             drawPdfFooter(doc, W, margin);
             doc.addPage();
-            y = drawPdfHeader(doc, W, margin, logoData, false);
+            y = drawPdfHeader(doc, W, margin, logoData, { isFirstPage: false });
           }
           y += drawBetBlock(doc, b, margin, y, W, margin, i === myBets.length - 1);
         });
@@ -851,6 +1490,382 @@
         doc.save('homecoded-reporte-predicciones.pdf');
       } finally {
         btn.disabled = false;
+        btn.textContent = prevLabel;
+      }
+    }
+
+    function pdfTruncate(doc, text, maxW){
+      const raw = String(text ?? '');
+      if(doc.getTextWidth(raw) <= maxW) return raw;
+      let out = raw;
+      while(out.length > 1 && doc.getTextWidth(`${out}…`) > maxW) out = out.slice(0, -1);
+      return `${out}…`;
+    }
+
+    function iterBracketMatches(data){
+      const out = [];
+      const push = (m)=>{ if(m?.matchNumber) out.push(m); };
+      BRACKET_PHASES.forEach((p)=>{
+        (data.left?.[p] || []).forEach(push);
+        (data.right?.[p] || []).forEach(push);
+      });
+      push(data.center?.third);
+      push(data.center?.final);
+      return out;
+    }
+
+    async function loadFlagForPdf(flagUrl){
+      if(!flagUrl) return null;
+      try {
+        const res = await fetch(flagUrl, { mode: 'cors' });
+        if(!res.ok) return null;
+        const blob = await res.blob();
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        await new Promise((resolve, reject)=>{
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = 40;
+        canvas.height = 28;
+        canvas.getContext('2d').drawImage(img, 0, 0, 40, 28);
+        URL.revokeObjectURL(url);
+        return canvas.toDataURL('image/png');
+      } catch {
+        return null;
+      }
+    }
+
+    async function buildBracketFlagCache(data){
+      const urls = new Set();
+      iterBracketMatches(data).forEach((m)=>{
+        if(m.home?.flagUrl) urls.add(m.home.flagUrl);
+        if(m.away?.flagUrl) urls.add(m.away.flagUrl);
+      });
+      const cache = new Map();
+      await Promise.all([...urls].map(async (url)=>{
+        const img = await loadFlagForPdf(url);
+        if(img) cache.set(url, img);
+      }));
+      return cache;
+    }
+
+    function bracketMatchConfirmed(m){
+      return !!(m?.home && m?.away && !m.home.pending && !m.away.pending);
+    }
+
+    function calcBracketColumnBoxes(matches, x, colW, y0, y1, boxH){
+      const bodyTop = y0 + 6.5;
+      const bodyH = y1 - bodyTop;
+      const list = matches || [];
+      const gap = list.length > 1
+        ? Math.max(1, (bodyH - list.length * boxH) / (list.length + 1))
+        : Math.max(0, (bodyH - boxH) / 2);
+      return list.map((m, i)=>{
+        const y = bodyTop + gap + i * (boxH + gap);
+        return { m, x, y, w: colW, h: boxH };
+      });
+    }
+
+    function drawBracketFeedPair(doc, p1, p2, child, direction){
+      const C = PDF_BRACKET;
+      doc.setDrawColor(...C.line);
+      doc.setLineWidth(0.55);
+      if(direction === 'ltr'){
+        const xMid = (p1.x + p1.w + child.x) / 2;
+        const y1 = p1.y + p1.h / 2;
+        const y2 = p2.y + p2.h / 2;
+        const yChild = child.y + child.h / 2;
+        doc.line(p1.x + p1.w, y1, xMid, y1);
+        doc.line(p2.x + p2.w, y2, xMid, y2);
+        doc.line(xMid, y1, xMid, y2);
+        doc.line(xMid, yChild, child.x, yChild);
+      } else {
+        const xMid = (child.x + child.w + p1.x) / 2;
+        const y1 = p1.y + p1.h / 2;
+        const y2 = p2.y + p2.h / 2;
+        const yChild = child.y + child.h / 2;
+        doc.line(p1.x, y1, xMid, y1);
+        doc.line(p2.x, y2, xMid, y2);
+        doc.line(xMid, y1, xMid, y2);
+        doc.line(xMid, yChild, child.x + child.w, yChild);
+      }
+    }
+
+    function drawBracketFeedSingle(doc, parent, child, direction){
+      const C = PDF_BRACKET;
+      doc.setDrawColor(...C.line);
+      doc.setLineWidth(0.55);
+      const yP = parent.y + parent.h / 2;
+      const yC = child.y + child.h / 2;
+      if(direction === 'ltr'){
+        const xMid = (parent.x + parent.w + child.x) / 2;
+        doc.line(parent.x + parent.w, yP, xMid, yP);
+        doc.line(xMid, yP, xMid, yC);
+        doc.line(xMid, yC, child.x, yC);
+      } else {
+        const xMid = (child.x + child.w + parent.x) / 2;
+        doc.line(parent.x, yP, xMid, yP);
+        doc.line(xMid, yP, xMid, yC);
+        doc.line(xMid, yC, child.x + child.w, yC);
+      }
+    }
+
+    function drawBracketConnectors(doc, positions){
+      Object.entries(BRACKET_PDF_FEEDS).forEach(([childNum, parents])=>{
+        const child = positions.get(Number(childNum));
+        if(!child) return;
+        if(Number(childNum) === 104){
+          const leftSf = positions.get(101);
+          const rightSf = positions.get(102);
+          if(leftSf) drawBracketFeedSingle(doc, leftSf, child, 'ltr');
+          if(rightSf) drawBracketFeedSingle(doc, rightSf, child, 'rtl');
+          return;
+        }
+        const dir = child.side === 'right' ? 'rtl' : 'ltr';
+        const pBoxes = parents.map((n)=>positions.get(n)).filter(Boolean);
+        if(pBoxes.length === 2) drawBracketFeedPair(doc, pBoxes[0], pBoxes[1], child, dir);
+        else if(pBoxes.length === 1) drawBracketFeedSingle(doc, pBoxes[0], child, dir);
+      });
+    }
+
+    function drawBracketMatchPdf(doc, box, flagCache){
+      const C = PDF_BRACKET;
+      const m = box.m;
+      const { x, y, w, h } = box;
+      const r = BRACKET_PDF_RADIUS;
+      const confirmed = bracketMatchConfirmed(m);
+      const finished = !!(m?.winner || m?.score);
+      const pad = 2.4;
+      const innerW = w - pad * 2;
+      const flagW = 2.6;
+      const flagH = 1.85;
+      const textXBase = x + pad;
+
+      doc.setFillColor(...C.card);
+      doc.setDrawColor(...C.cardBorder);
+      doc.setLineWidth(0.18);
+      doc.roundedRect(x, y, w, h, r, r, 'FD');
+
+      if(confirmed){
+        doc.setFillColor(...C.gold);
+        doc.roundedRect(x + 0.55, y + 1.2, 0.9, h - 2.4, 0.45, 0.45, 'F');
+      }
+      if(m?.isToday){
+        doc.setDrawColor(...C.gold);
+        doc.setLineWidth(0.35);
+        doc.roundedRect(x, y, w, h, r, r, 'S');
+      } else if(m?.status === 'live'){
+        doc.setDrawColor(...C.green);
+        doc.setLineWidth(0.35);
+        doc.roundedRect(x, y, w, h, r, r, 'S');
+      } else if(finished){
+        doc.setDrawColor(...C.gold);
+        doc.setLineWidth(0.28);
+        doc.roundedRect(x, y, w, h, r, r, 'S');
+      }
+
+      let cy = y + 3.4;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.2);
+      doc.setTextColor(...(confirmed ? C.gold : C.muted));
+      doc.text(m?.matchNumber ? `#${m.matchNumber}` : '—', textXBase + (confirmed ? 1.2 : 0), cy);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(4.9);
+      doc.setTextColor(...C.muted);
+      if(m?.scheduleLabel){
+        doc.text(pdfTruncate(doc, m.scheduleLabel, innerW - (confirmed ? 1.2 : 0)), textXBase + (confirmed ? 1.2 : 0), cy + 2.6);
+        cy += 2.4;
+      }
+
+      cy += 3.2;
+      const teamRowH = 3;
+      const drawTeam = (team, goals, isWinner)=>{
+        const pending = !!team?.pending;
+        const tx = textXBase + (confirmed ? 1.2 : 0);
+        const rowTop = cy - 2.05;
+        const textY = rowTop + teamRowH * 0.78;
+        const flagY = rowTop + (teamRowH - flagH) / 2;
+        let nameX = tx;
+        if(!pending && team?.flagUrl && flagCache?.get(team.flagUrl)){
+          try {
+            doc.addImage(flagCache.get(team.flagUrl), 'PNG', tx, flagY, flagW, flagH);
+            nameX = tx + flagW + 0.75;
+          } catch { /* skip flag */ }
+        }
+        doc.setFont('helvetica', (isWinner || (confirmed && !pending)) ? 'bold' : 'normal');
+        doc.setFontSize(pending ? 5.4 : 5.8);
+        if(pending){
+          doc.setTextColor(...C.mutedDim);
+        } else if(isWinner){
+          doc.setTextColor(...C.gold);
+        } else {
+          doc.setTextColor(...C.text);
+        }
+        const label = pending ? 'Por definir' : (team?.name || 'Por definir');
+        const maxNameW = (x + pad + innerW) - nameX - (goals != null ? 5 : 0);
+        doc.text(pending ? label : pdfTruncate(doc, label, maxNameW), nameX, textY);
+        if(goals != null){
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5.8);
+          doc.setTextColor(...(isWinner ? C.gold : C.text));
+          doc.text(String(goals), x + w - pad, textY, { align: 'right' });
+        }
+        cy += teamRowH + 0.35;
+      };
+
+      let homeGoals = null;
+      let awayGoals = null;
+      if(m?.score){
+        const parts = String(m.score).split('-');
+        homeGoals = parts[0];
+        awayGoals = parts[1];
+      }
+      const homeWin = !!(m?.winner && m?.home?.name === m.winner);
+      const awayWin = !!(m?.winner && m?.away?.name === m.winner);
+      drawTeam(m?.home, homeGoals, homeWin);
+      drawTeam(m?.away, awayGoals, awayWin);
+    }
+
+    function layoutBracketColumnBoxes(matches, x, colW, y0, y1, side, positions){
+      const boxes = calcBracketColumnBoxes(matches, x, colW, y0, y1, BRACKET_PDF_BOX_H);
+      boxes.forEach((box)=>{
+        if(box.m?.matchNumber) positions.set(box.m.matchNumber, { ...box, side });
+      });
+      return boxes;
+    }
+
+    function drawBracketColumnHeader(doc, label, phaseKey, currentPhase, x, colW, y0){
+      const C = PDF_BRACKET;
+      const active = phaseKey === currentPhase;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...(active ? C.gold : C.muted));
+      doc.text(label, x + colW / 2, y0 + 3.2, { align: 'center' });
+      doc.setDrawColor(...(active ? C.gold : C.cardBorder));
+      doc.setLineWidth(active ? 0.45 : 0.2);
+      doc.line(x, y0 + 4.8, x + colW, y0 + 4.8);
+    }
+
+    function drawBracketColumnPdf(doc, label, matches, phaseKey, currentPhase, x, colW, y0, y1, side, positions, flagCache, layoutOnly){
+      if(!layoutOnly){
+        drawBracketColumnHeader(doc, label, phaseKey, currentPhase, x, colW, y0);
+      }
+      const boxes = layoutOnly
+        ? layoutBracketColumnBoxes(matches, x, colW, y0, y1, side, positions)
+        : calcBracketColumnBoxes(matches, x, colW, y0, y1, BRACKET_PDF_BOX_H);
+      if(!layoutOnly){
+        boxes.forEach((box)=> drawBracketMatchPdf(doc, box, flagCache));
+      }
+      return boxes;
+    }
+
+    function drawBracketCenterPdf(doc, data, labels, x, colW, y0, y1, positions, flagCache, layoutOnly){
+      const C = PDF_BRACKET;
+      const mid = (y0 + y1) / 2;
+      const third = data.center?.third;
+      const finalM = data.center?.final;
+      const thirdBox = { m: third, x, y: y0 + 7, w: colW, h: BRACKET_PDF_BOX_H };
+      const finalBox = { m: finalM, x, y: mid + 2.5, w: colW, h: BRACKET_PDF_BOX_H };
+
+      if(third?.matchNumber) positions.set(third.matchNumber, { ...thirdBox, side: 'center' });
+      if(finalM?.matchNumber) positions.set(finalM.matchNumber, { ...finalBox, side: 'center' });
+
+      if(layoutOnly) return;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...C.muted);
+      doc.text(labels['third-place'] || '3°', x + colW / 2, y0 + 3.2, { align: 'center' });
+      drawBracketMatchPdf(doc, thirdBox, flagCache);
+      doc.text(labels.final || 'Final', x + colW / 2, mid - 1.5, { align: 'center' });
+      drawBracketMatchPdf(doc, finalBox, flagCache);
+    }
+
+    function drawBracketPdfLayout(doc, data, margin, flagCache){
+      const C = PDF_BRACKET;
+      const W = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const y0 = 46;
+      const footerReserve = 28;
+      const y1 = pageH - footerReserve;
+      const labels = data.phaseLabels || {};
+      const phase = data.currentPhase || 'round-of-32';
+      const colGap = 1.8;
+      const centerW = 36;
+      const sideCols = 4;
+      const sideW = (W - margin * 2 - centerW - colGap * 5) / (sideCols * 2);
+      const positions = new Map();
+      let x = margin;
+
+      BRACKET_PHASES.forEach((p)=>{
+        drawBracketColumnPdf(doc, labels[p] || p, data.left?.[p], p, phase, x, sideW, y0, y1, 'left', positions, flagCache, true);
+        x += sideW + colGap;
+      });
+      drawBracketCenterPdf(doc, data, labels, x, centerW, y0, y1, positions, flagCache, true);
+      x += centerW + colGap;
+      [...BRACKET_PHASES].reverse().forEach((p)=>{
+        drawBracketColumnPdf(doc, labels[p] || p, data.right?.[p], p, phase, x, sideW, y0, y1, 'right', positions, flagCache, true);
+        x += sideW + colGap;
+      });
+
+      drawBracketConnectors(doc, positions);
+
+      x = margin;
+      BRACKET_PHASES.forEach((p)=>{
+        drawBracketColumnPdf(doc, labels[p] || p, data.left?.[p], p, phase, x, sideW, y0, y1, 'left', positions, flagCache, false);
+        x += sideW + colGap;
+      });
+      drawBracketCenterPdf(doc, data, labels, x, centerW, y0, y1, positions, flagCache, false);
+      x += centerW + colGap;
+      [...BRACKET_PHASES].reverse().forEach((p)=>{
+        drawBracketColumnPdf(doc, labels[p] || p, data.right?.[p], p, phase, x, sideW, y0, y1, 'right', positions, flagCache, false);
+        x += sideW + colGap;
+      });
+
+      const phaseName = BRACKET_PHASE_NAMES[phase] || phase;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(...C.text);
+      doc.text(`Fase actual: ${phaseName} · Horarios en COT (Bogotá)`, W / 2, pageH - 18, { align: 'center' });
+    }
+
+    async function downloadBracketPdf(){
+      if(!bracketData || !window.jspdf) return;
+      const btn = document.getElementById('btnBracketPdf');
+      const prevLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Generando PDF…';
+      try {
+        if(!bracketData?.ok) await loadKnockoutBracket(false, true);
+        const [logoData, flagCache] = await Promise.all([
+          loadLogoForPdf(),
+          buildBracketFlagCache(bracketData),
+        ]);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+        const W = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const margin = 10;
+        doc.setFillColor(...PDF_BRACKET.bg);
+        doc.rect(0, 0, W, pageH, 'F');
+        drawPdfHeader(doc, W, margin, logoData, {
+          title: 'Cuadro Eliminatorio - Mundial FIFA 2026',
+          titleSize: 13,
+          colors: PDF_BRACKET,
+        });
+        drawBracketPdfLayout(doc, bracketData, margin, flagCache);
+        drawPdfFooter(doc, W, margin, {
+          colors: PDF_BRACKET,
+          compact: true,
+          text: 'Cuadro actualizado según resultados oficiales y cruces del torneo * homecoded-analytics.vercel.app * HomeCoded Analytics · Mundial FIFA 2026',
+        });
+        doc.save('homecoded-cuadro-eliminatorio.pdf');
+      } finally {
+        btn.disabled = !bracketData?.ok;
         btn.textContent = prevLabel;
       }
     }
@@ -882,13 +1897,17 @@
       return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
     }
 
-    function showPieTooltip(label, share, evt){
+    function showChartTooltip(title, body, evt){
       const tip = document.getElementById('pieTooltip');
       if(!tip) return;
-      tip.innerHTML = `<strong>${share}% del total</strong>${esc(label)}`;
+      tip.innerHTML = `<strong>${esc(title)}</strong>${esc(body)}`;
       tip.classList.remove('hidden');
       tip.setAttribute('aria-hidden', 'false');
       movePieTooltip(evt);
+    }
+
+    function showPieTooltip(label, share, evt){
+      showChartTooltip(`${share}% del total`, label, evt);
     }
 
     function movePieTooltip(evt){
@@ -904,6 +1923,16 @@
       tip.classList.add('hidden');
       tip.setAttribute('aria-hidden', 'true');
       document.querySelectorAll('.pie-slice.is-active').forEach(el=>el.classList.remove('is-active'));
+    }
+
+    function bindBarTips(){
+      document.querySelectorAll('.win-bar-tip, .bar-tip').forEach(el=>{
+        el.addEventListener('mouseenter', e=>{
+          showChartTooltip(el.dataset.tipTitle || '', el.dataset.tipText || '', e);
+        });
+        el.addEventListener('mousemove', movePieTooltip);
+        el.addEventListener('mouseleave', hidePieTooltip);
+      });
     }
 
     function bindPieInteractions(){
@@ -980,7 +2009,7 @@
       const isLive = m.status === 'live';
       const switchHtml = isLive ? `<div class="view-switch" data-match-switch="${m.id}">
         <button type="button" class="active" data-view="prematch">Antes del partido</button>
-        <button type="button" data-view="live">En vivo · ${esc(m.live?.display || `${m.live?.minute || 0}'`)}</button>
+        <button type="button" data-view="live">En vivo · ${esc(isInPenaltyShootout(m) ? 'Tanda de penales' : (m.live?.display || `${m.live?.minute || 0}'`))}</button>
       </div>` : '';
       const prematch = renderActionsList(m, m.analysis.probableActions, 'prematch');
       const pending = m.analysis.liveProbableActions || [];
@@ -1007,10 +2036,13 @@
     }
 
     function renderReviewRow(item){
+      const oc = item.outcome === 'hit' ? 'hit' : item.outcome === 'miss' ? 'miss' : 'unknown';
+      const ocLabel = item.outcome === 'hit' ? 'Acierto' : item.outcome === 'miss' ? 'Desacierto' : 'Sin datos';
       const c = catCls(item.category?.id || 'poco');
-      return `<li class="review-item">
+      return `<li class="review-item ${oc}">
         <span class="review-rank">${item.rank}</span>
         <div class="review-item-main">
+          <div class="review-outcome">${ocLabel}</div>
           <div>${esc(item.label)}</div>
           <span class="action-tag ${c}">${esc(item.category?.label || '')}</span>
         </div>
@@ -1021,20 +2053,23 @@
     function renderReview(m){
       if(m.status!=='finished'||!m.review) return '';
       const st=m.actualStats;
-      const statsTxt=st?.verified?`Stats reales: ${st.totalCorners} córners · ${st.totalShotsOnTarget} disparos a puerta · ${st.yellowCards} amarillas`:(st?.liveStats?'Stats ESPN':'Stats parciales');
+      const statsTxt=st?.verified?`Stats reales: ${st.totalCorners} córners · ${st.totalShotsOnTarget} disparos a puerta · ${st.yellowCards} amarillas`:(st?.liveStats?'Stats ESPN':'Stats parciales · algunas predicciones sin dato');
       const scoreTxt=m.score?`Final ${m.score.home}-${m.score.away} (HT ${m.score.htHome}-${m.score.htAway})`:'';
       const items = getReviewItems(m);
       const hits = items.filter(i => i.outcome === 'hit').sort((a, b) => a.rank - b.rank);
-      const misses = items.filter(i => i.outcome !== 'hit').sort((a, b) => a.rank - b.rank);
+      const misses = items.filter(i => i.outcome === 'miss').sort((a, b) => a.rank - b.rank);
+      const unknown = items.filter(i => i.outcome === 'unknown').sort((a, b) => a.rank - b.rank);
       const hitsHtml = hits.length ? hits.map(renderReviewRow).join('') : '<li class="review-item"><span class="review-rank">—</span><div class="review-item-main"><div>Sin aciertos registrados</div></div></li>';
       const missesHtml = misses.length ? misses.map(renderReviewRow).join('') : '<li class="review-item"><span class="review-rank">—</span><div class="review-item-main"><div>Sin desaciertos registrados</div></div></li>';
+      const unknownHtml = unknown.length ? `<div class="review unknown"><h4>Sin datos (${unknown.length})</h4><ul class="review-list">${unknown.map(renderReviewRow).join('')}</ul></div>` : '';
       return `${renderPie(m.analysis.probableActions)}<p style="font-size:.625rem;color:var(--muted);margin:.5rem 0;text-align:center">${esc(scoreTxt)} · ${esc(statsTxt)}</p>
         <div class="review all-predictions">
-          <h4>Resultado de las 10 predicciones · ${hits.length} aciertos · ${misses.length} desaciertos</h4>
+          <h4>Resultado de las 10 predicciones · ${hits.length} aciertos · ${misses.length} desaciertos${unknown.length ? ` · ${unknown.length} sin datos` : ''}</h4>
           <div class="review-grid">
             <div class="review hits"><h4>Aciertos (${hits.length})</h4><ul class="review-list">${hitsHtml}</ul></div>
             <div class="review misses"><h4>Desaciertos (${misses.length})</h4><ul class="review-list">${missesHtml}</ul></div>
           </div>
+          ${unknownHtml}
         </div>`;
     }
 
@@ -1062,13 +2097,19 @@
         </div>`;
       }
       return `<div class="card" style="grid-column:1/-1"><div class="card-title">Disparos a puerta · proyección</div>
-        <div class="team-label">${flagImg(m.home)} ${esc(m.home.name)}</div>
-        <table><thead><tr><th>Jugador</th><th class="num">Proj.</th></tr></thead><tbody>${a.shotsOnTarget.homePlayers.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${tip(p.projected,'Proyección')}</td></tr>`).join('')}</tbody></table>
-        <div class="team-label">${flagImg(m.away)} ${esc(m.away.name)}</div>
-        <table><thead><tr><th>Jugador</th><th class="num">Proj.</th></tr></thead><tbody>${a.shotsOnTarget.awayPlayers.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${tip(p.projected,'Proyección')}</td></tr>`).join('')}</tbody></table></div>`;
+        <div class="shots-proj-grid">
+          ${renderShotsTeamBox(m.home, a.shotsOnTarget.homePlayers)}
+          ${renderShotsTeamBox(m.away, a.shotsOnTarget.awayPlayers)}
+        </div></div>`;
     }
 
     function renderRefereeStats(m, a){
+      if(m.referee?.assigned === false){
+        return `<p class="ref-pending" style="text-align:center;padding:.75rem 0;line-height:1.5">
+          Designación pendiente · FIFA publica al árbitro 24–48 h antes del partido.<br>
+          Las proyecciones de tarjetas se mostrarán cuando se confirme el árbitro.
+        </p>`;
+      }
       const st = m.actualStats;
       const hasActual = hasRealStats(m);
       const ppHint = 'Amarillas promedio por partido';
@@ -1084,21 +2125,24 @@
     }
 
     function renderAnalysis(m){
+      if(m.teamsPending || m.analysis?.pending){
+        return `<div class="match-pending-notice">
+          <p><strong>Equipos por definir</strong></p>
+          <p>Las predicciones se mostrarán cuando se confirmen ambos rivales (según resultados de la fase anterior).</p>
+          ${m.stageLabel ? `<p style="margin-top:.5rem">${esc(m.stageLabel)}</p>` : ''}
+        </div>`;
+      }
       const a=m.analysis;
-      const maxC=Math.max(a.corners.home,a.corners.away,1);
+      const koNote = m.isKnockout ? '<p class="ko-market-note">Mercados de empate y doble oportunidad aplican al resultado en 90 min (sin prórroga).</p>' : '';
+      const koExtra = renderKnockoutExtra(m);
+      const koPen = renderKnockoutPenalties(m);
       const st = m.actualStats;
       const cornersTitle = st?.totalCorners != null && (st.verified || st.liveStats)
         ? 'Córners · dato real' : 'Córners proj.';
       const cornersBlock = st?.homeCorners != null && (st.verified || st.liveStats)
-        ? `<div class="card"><div class="card-title">${cornersTitle}</div>
-          <div class="stat-row"><span>${flagImg(m.home)} ${esc(m.home.name)}</span><span>${st.homeCorners}</span></div><div class="bar"><i style="width:${(st.homeCorners/maxC)*100}%"></i></div>
-          <div class="stat-row" style="margin-top:.375rem"><span>${flagImg(m.away)} ${esc(m.away.name)}</span><span>${st.awayCorners}</span></div><div class="bar"><i style="width:${(st.awayCorners/maxC)*100}%"></i></div>
-          <div class="stat-row" style="margin-top:.375rem"><span>Total</span><strong>${st.totalCorners}</strong></div></div>`
-        : `<div class="card"><div class="card-title">Córners proj.</div>
-          <div class="stat-row"><span>${flagImg(m.home)} ${esc(m.home.name)}</span><span>${tip(a.corners.home,'Local')}</span></div><div class="bar"><i style="width:${(a.corners.home/maxC)*100}%"></i></div>
-          <div class="stat-row" style="margin-top:.375rem"><span>${flagImg(m.away)} ${esc(m.away.name)}</span><span>${tip(a.corners.away,'Visitante')}</span></div><div class="bar"><i style="width:${(a.corners.away/maxC)*100}%"></i></div>
-          <div class="stat-row" style="margin-top:.375rem"><span>Total</span><strong>${tip(a.corners.total,'Total')}</strong></div></div>`;
-      return `${renderWinOutlook(m)}<div class="grid2">
+        ? `<div class="card"><div class="card-title">${cornersTitle}</div>${renderCornerBars(m, st.homeCorners, st.awayCorners, st.totalCorners, true)}</div>`
+        : `<div class="card"><div class="card-title">Córners proj.</div>${renderCornerBars(m, a.corners.home, a.corners.away, a.corners.total, false)}</div>`;
+      return `${renderWinOutlook(m)}${koExtra}${koPen}<div class="grid2">
         <div class="card"><div class="card-title">Dominio</div>
           <div style="display:flex;text-align:center;font-size:.75rem">
             <div style="flex:1">${flagImg(m.home)}<div style="margin-top:.25rem">${esc(m.home.name)}</div><div style="font-weight:700;color:var(--accent);margin-top:.25rem">${tip(a.dominance.home,'Dominio local')}%</div></div>
@@ -1107,33 +2151,40 @@
           </div></div>
         ${cornersBlock}
         ${renderShotsCard(m, a)}
-        ${m.status !== 'finished' ? `<div class="card" style="grid-column:1/-1"><div class="card-title">Acciones probables</div>${renderActions(m)}</div>` : ''}
+        ${koNote}${m.status !== 'finished' ? `<div class="card" style="grid-column:1/-1"><div class="card-title">Acciones probables</div>${renderActions(m)}</div>` : ''}
         <div class="card" style="grid-column:1/-1"><div class="card-title">Árbitro</div>
           ${renderRefereeStats(m, a)}
-          <p style="font-size:.625rem;color:var(--muted);margin-top:.5rem">${renderReferee(m)}</p>${renderReview(m)}</div>
+          <p class="ref-line" style="font-size:.625rem;color:var(--muted);margin-top:.5rem">${renderReferee(m)}</p>${renderReview(m)}</div>
       </div>`;
+    }
+
+    function teamNameHtml(team){
+      const cls = team.pending ? 'team-name pending' : 'team-name';
+      return `<strong class="${cls}">${esc(team.name)}</strong>`;
     }
 
     function renderMatchTeams(m){
       if(m.score){
         return `<div class="match-teams match-scoreline">
-          <span class="team-side team-home"><strong class="team-name">${esc(m.home.name)}</strong> ${flagImg(m.home)} <span class="score-val">${m.score.home}</span></span>
+          <span class="team-side team-home">${teamNameHtml(m.home)} ${flagImg(m.home)} <span class="score-val">${m.score.home}</span></span>
           <span class="match-vs">VS</span>
-          <span class="team-side team-away"><span class="score-val">${m.score.away}</span> ${flagImg(m.away)} <strong class="team-name">${esc(m.away.name)}</strong></span>
+          <span class="team-side team-away"><span class="score-val">${m.score.away}</span> ${flagImg(m.away)} ${teamNameHtml(m.away)}</span>
         </div>`;
       }
       return `<div class="match-teams">
-        <span class="team-side"><strong class="team-name">${esc(m.home.name)}</strong> ${flagImg(m.home)}</span>
+        <span class="team-side">${teamNameHtml(m.home)} ${flagImg(m.home)}</span>
         <span class="match-vs">VS</span>
-        <span class="team-side">${flagImg(m.away)} <strong class="team-name">${esc(m.away.name)}</strong></span>
+        <span class="team-side">${flagImg(m.away)} ${teamNameHtml(m.away)}</span>
       </div>`;
     }
 
     function renderMatch(m){
       const isLive = m.status === 'live';
       const isScheduled = !isLive && m.status !== 'finished';
-      const clockHtml = isLive && m.live?.display
-        ? `<span class="match-row-clock${m.live.isHalftime ? ' halftime' : ''}">${esc(m.live.display)}</span>` : '';
+      const ko = m.live?.knockout;
+      const clockCls = m.live?.isHalftime ? ' halftime' : ko?.showExtraTime ? ' extra-time' : ko?.showShootout ? ' shootout' : '';
+      const clockHtml = isLive && (m.live?.display || ko?.display)
+        ? `<span class="match-row-clock${clockCls}">${esc(ko?.display || m.live.display)}</span>` : '';
       const kickoffAttr = (isLive || isScheduled) ? ` data-kickoff="${esc(m.kickoffUtc)}"` : '';
       return `<article class="match" id="match-${m.id}" data-id="${m.id}"${isLive ? ' data-live="1"' : ''}${isScheduled ? ' data-scheduled="1"' : ''}${kickoffAttr}>
         <button type="button" class="match-btn"><div class="match-head">
@@ -1143,8 +2194,9 @@
           </div>
           <div class="match-row match-kickoff"><span class="pill kickoff">${esc(m.kickoffLabel)}</span></div>
           ${renderMatchTeams(m)}
+          ${renderKnockoutExtra(m)}${renderKnockoutPenalties(m)}
         </div>
-          <div class="match-meta">${esc(m.group)}${m.venue?' · '+esc(m.venue):''}</div></button>
+          <div class="match-meta">${esc(m.stageLabel || m.group || '')}${m.venue?' · '+esc(m.venue):''}</div></button>
         <div class="match-body" hidden>${renderAnalysis(m)}</div></article>`;
     }
 
@@ -1179,7 +2231,15 @@
           return;
         }
         const btn = e.target.closest('.match-btn');
-        if(btn) toggleMatch(Number(btn.closest('.match').dataset.id));
+        if(btn){
+          const id = Number(btn.closest('.match').dataset.id);
+          const wasOpen = document.getElementById(`match-${id}`)?.classList.contains('is-open');
+          toggleMatch(id);
+          if(!navApplying && navReady){
+            if(wasOpen) goBack();
+            else pushNavState({ date: currentDate, matchId: id, bracket: false, betList: listOpen });
+          }
+        }
       });
 
       document.getElementById('betDrawer').addEventListener('click', e=>{
@@ -1188,8 +2248,124 @@
       });
     }
 
+    function rigorFromCards(cpg){
+      if(cpg == null || !Number.isFinite(cpg)) return { rigor:'Medio', multiplier:1.0 };
+      if(cpg < 3.0) return { rigor:'Bajo', multiplier:0.75 };
+      if(cpg < 3.5) return { rigor:'Medio', multiplier:1.0 };
+      if(cpg < 4.0) return { rigor:'Medio-Alto', multiplier:1.15 };
+      return { rigor:'Alto', multiplier:1.3 };
+    }
+
+    function pairKeyEn(date, homeEn, awayEn){
+      const parts = [String(homeEn||'').toLowerCase(), String(awayEn||'').toLowerCase()].sort();
+      return `${date}|${parts.join('|')}`;
+    }
+
+    function applyRefereeEntry(match, entry){
+      if(!entry?.name) return false;
+      const tone = rigorFromCards(entry.cardsPerGame);
+      match.referee = {
+        name: entry.name,
+        country: entry.country || 'Internacional',
+        rigor: tone.rigor,
+        assigned: true,
+        source: entry.source || 'sofascore',
+        verified: entry.verified !== false,
+        label: `${entry.name} · ${entry.country || 'Internacional'} · ${tone.rigor}${entry.source === 'sofascore' ? ' · SofaScore' : entry.source === 'espn+sofascore' ? ' · ESPN+SofaScore' : ''}`,
+      };
+      return true;
+    }
+
+    function refreshOpenMatchBodies(ids){
+      ids.forEach(id=>{
+        const m = matchesData.find(x=>x.id === id);
+        const el = document.getElementById(`match-${id}`);
+        if(!m || !el) return;
+        const body = el.querySelector('.match-body');
+        if(body && !body.hidden) body.innerHTML = renderAnalysis(m);
+      });
+      bindBarTips();
+      bindPieInteractions();
+    }
+
+    async function fetchClientSofaEvents(dateIso){
+      const all = [];
+      for(const dir of ['next', 'last']){
+        for(let page = 0; page < 4; page++){
+          const url = `https://api.sofascore.com/api/v1/unique-tournament/${SOFA_WC.tournamentId}/season/${SOFA_WC.seasonId}/events/${dir}/${page}`;
+          const res = await fetch(url, { headers: SOFA_HEADERS, cache: 'no-store' });
+          if(!res.ok) break;
+          const data = await res.json();
+          all.push(...(data.events || []));
+          if(!data.hasNextPage) break;
+        }
+      }
+      const byId = new Map();
+      all.forEach(ev=>{ if(ev?.id) byId.set(ev.id, ev); });
+      return [...byId.values()].filter(ev=>{
+        if(!ev.startTimestamp) return false;
+        return new Date(ev.startTimestamp * 1000).toISOString().slice(0, 10) === dateIso;
+      });
+    }
+
+    async function fetchClientSofaReferee(eventId){
+      const res = await fetch(`https://api.sofascore.com/api/v1/event/${eventId}`, { headers: SOFA_HEADERS, cache: 'no-store' });
+      if(!res.ok) return null;
+      const data = await res.json();
+      const ref = data?.event?.referee;
+      if(!ref?.name) return null;
+      const games = ref.games || 0;
+      const cardsPerGame = games
+        ? ((ref.yellowCards || 0) + (ref.redCards || 0) * 2 + (ref.yellowRedCards || 0)) / games
+        : null;
+      return {
+        name: ref.name,
+        country: ref.country?.name || 'Internacional',
+        cardsPerGame: cardsPerGame != null ? Math.round(cardsPerGame * 100) / 100 : null,
+        source: 'sofascore',
+        verified: true,
+      };
+    }
+
+    async function supplementFromSofaScore(data){
+      if(!data?.matches?.length) return;
+      const needsRef = data.matches.filter(m => !m.teamsPending && m.referee?.assigned === false);
+      if(!needsRef.length) return;
+
+      const byKey = new Map();
+      try {
+        const dayEvents = await fetchClientSofaEvents(data.date);
+        for(const ev of dayEvents){
+          const key = pairKeyEn(data.date, ev.homeTeam?.name, ev.awayTeam?.name);
+          if(byKey.has(key)) continue;
+          const ref = ev.referee?.name
+            ? {
+                name: ev.referee.name,
+                country: ev.referee.country?.name || 'Internacional',
+                cardsPerGame: ev.referee.games
+                  ? Math.round((((ev.referee.yellowCards||0)+(ev.referee.redCards||0)*2)/ev.referee.games)*100)/100
+                  : null,
+                source: 'sofascore',
+                verified: true,
+              }
+            : await fetchClientSofaReferee(ev.id);
+          if(ref) byKey.set(key, ref);
+        }
+      } catch {}
+
+      const updated = [];
+      needsRef.forEach(m=>{
+        const key = pairKeyEn(m.date, m.home.originalName, m.away.originalName);
+        const entry = byKey.get(key);
+        if(applyRefereeEntry(m, entry)) updated.push(m.id);
+      });
+
+      if(updated.length) refreshOpenMatchBodies(updated);
+    }
+
     function renderAll(data){
       matchesData = data.matches;
+      viewingToday = data.isToday;
       document.getElementById('loadState').style.display='none';
       document.getElementById('errorMsg').style.display='none';
       updateCalendarUI(data);
@@ -1211,7 +2387,9 @@
       document.getElementById('matchesContainer').innerHTML = data.matches.map(renderMatch).join('');
       bindEvents();
       bindPieInteractions();
+      bindBarTips();
       refreshActionStates();
+      updateBackButton();
       clearInterval(scheduleTimer);
       if(data.matches.some(m => m.status !== 'finished' && m.status !== 'live')){
         tickScheduledBadges();
@@ -1223,16 +2401,314 @@
         tickLiveDisplays();
         clockTimer = setInterval(tickLiveDisplays, 60000);
         pollTimer = setInterval(()=>loadMatches(currentDate, true), 90000);
+      } else if(data.isToday && data.matches.some(m => m.status === 'scheduled' || m.status === 'live')){
+        clearInterval(pollTimer);
+        pollTimer = setInterval(()=>loadMatches(currentDate, true), 120000);
       } else {
         clearInterval(pollTimer);
         clearInterval(clockTimer);
       }
+      supplementFromSofaScore(data).catch(()=>{});
+      setTimeout(()=> supplementFromSofaScore(data).catch(()=>{}), 12000);
     }
 
-    async function loadMatches(dateIso, silent=false){
-      const date = typeof dateIso === 'string'
-        ? dateIso
-        : (silent && currentDate ? currentDate : null);
+    function getBogotaParts(date = new Date()){
+      const parts = Object.fromEntries(
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Bogota',
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: 'numeric', minute: 'numeric', second: 'numeric',
+          hour12: false,
+        }).formatToParts(date).filter(p => p.type !== 'literal').map(p => [p.type, Number(p.value)])
+      );
+      return parts;
+    }
+
+    function msUntilNextBogotaTime(hour, minute, second = 0){
+      const p = getBogotaParts();
+      let y = p.year, mo = p.month, d = p.day;
+      const nowSec = p.hour * 3600 + p.minute * 60 + p.second;
+      const targetSec = hour * 3600 + minute * 60 + second;
+      if(nowSec >= targetSec){
+        const nextDay = new Date(Date.UTC(y, mo - 1, d + 1));
+        y = nextDay.getUTCFullYear();
+        mo = nextDay.getUTCMonth() + 1;
+        d = nextDay.getUTCDate();
+      }
+      const targetUtc = Date.UTC(y, mo - 1, d, hour + 5, minute, second);
+      return Math.max(1000, targetUtc - Date.now());
+    }
+
+    function scheduleDailyRefresh(){
+      clearTimeout(dailyRefreshTimer);
+      dailyRefreshTimer = setTimeout(async ()=>{
+        await refreshPageContent({ silent: true, refreshOdds: true, bustCache: true });
+        scheduleDailyRefresh();
+      }, msUntilNextBogotaTime(0, 1, 0));
+    }
+
+    async function refreshPageContent({ silent = false, refreshOdds = true, bustCache = false } = {}){
+      if(isRefreshing) return;
+      isRefreshing = true;
+      const fab = document.getElementById('btnRefreshFab');
+      fab?.classList.add('is-loading');
+      fab?.setAttribute('aria-busy', 'true');
+      if(fab) fab.disabled = true;
+      try {
+        const dateArg = viewingToday ? null : currentDate;
+        await loadMatches(dateArg, silent, bustCache);
+        if(refreshOdds && myBets.length) await refreshBetanoOdds();
+        if(bracketOpen) await loadKnockoutBracket(bustCache);
+      } finally {
+        isRefreshing = false;
+        fab?.classList.remove('is-loading');
+        fab?.setAttribute('aria-busy', 'false');
+        if(fab) fab.disabled = false;
+      }
+    }
+
+    let bracketOpen = false;
+    let bracketData = null;
+    let bracketPollTimer = null;
+
+    function scheduleBracketPolling(){
+      clearInterval(bracketPollTimer);
+      if(!bracketOpen) return;
+      bracketPollTimer = setInterval(()=> loadKnockoutBracket(false, true), 60000);
+    }
+
+    function renderBracketTeamRow(team, goals, isWinner){
+      const pending = team.pending ? ' is-pending' : '';
+      const win = isWinner ? ' is-winner' : '';
+      const flag = team.flagUrl
+        ? `<img class="brk-flag" src="${esc(team.flagUrl)}" alt="" width="14" height="10" loading="lazy">`
+        : '';
+      const score = goals != null ? `<span class="brk-goals">${esc(goals)}</span>` : '';
+      return `<div class="brk-team${win}${pending}">${flag}<span class="brk-name">${esc(team.name)}</span>${score}</div>`;
+    }
+
+    function renderBracketMatch(m){
+      if(!m?.matchNumber){
+        return `<div class="brk-match" aria-hidden="true"><span class="brk-num">—</span></div>`;
+      }
+      let homeGoals = null;
+      let awayGoals = null;
+      if(m.score){
+        const parts = String(m.score).split('-');
+        homeGoals = parts[0];
+        awayGoals = parts[1];
+      }
+      const homeWin = !!(m.winner && m.home?.name === m.winner);
+      const awayWin = !!(m.winner && m.away?.name === m.winner);
+      const todayCls = m.isToday ? ' is-today' : '';
+      const liveCls = m.status === 'live' ? ' is-live' : '';
+      const schedule = m.scheduleLabel
+        ? `<span class="brk-date">${esc(m.scheduleLabel)}</span>`
+        : (m.dateLabel ? `<span class="brk-date">${esc(m.dateLabel)}</span>` : '');
+      return `<button type="button" class="brk-match${todayCls}${liveCls}" data-match="${m.matchNumber}" title="Partido #${m.matchNumber}">
+        <span class="brk-num">#${m.matchNumber}</span>
+        ${schedule}
+        ${renderBracketTeamRow(m.home, homeGoals, homeWin)}
+        ${renderBracketTeamRow(m.away, awayGoals, awayWin)}
+      </button>`;
+    }
+
+    function renderBracketColumn(label, matches, phaseKey, currentPhase){
+      const active = phaseKey === currentPhase ? ' is-active-phase' : '';
+      return `<div class="brk-col${active}">
+        <div class="brk-col-head">${esc(label)}</div>
+        <div class="brk-col-body">${(matches || []).map(renderBracketMatch).join('')}</div>
+      </div>`;
+    }
+
+    function renderKnockoutBracket(data){
+      const labels = data.phaseLabels || {};
+      const phase = data.currentPhase || 'round-of-32';
+      const leftCols = BRACKET_PHASES.map((p) =>
+        renderBracketColumn(labels[p] || p, data.left?.[p], p, phase)
+      ).join('');
+      const rightCols = [...BRACKET_PHASES].reverse().map((p) =>
+        renderBracketColumn(labels[p] || p, data.right?.[p], p, phase)
+      ).join('');
+      const center = `<div class="brk-col brk-center">
+        <div class="brk-col-head">${esc(labels['third-place'] || '3°')}</div>
+        <div class="brk-col-body">
+          ${renderBracketMatch(data.center?.third)}
+          <div class="brk-col-head brk-final-head">${esc(labels.final || 'Final')}</div>
+          ${renderBracketMatch(data.center?.final)}
+        </div>
+      </div>`;
+      return `<div class="brk-half brk-half-left">${leftCols}</div>${center}<div class="brk-half brk-half-right">${rightCols}</div>`;
+    }
+
+    function updateBracketHeader(data){
+      const phase = data?.currentPhase || 'round-of-32';
+      const name = BRACKET_PHASE_NAMES[phase] || phase;
+      document.getElementById('bracketSub').textContent = `Fase actual: ${name} · 16 equipos por mitad`;
+    }
+
+    function findBracketMatchByNumber(num){
+      if(!bracketData) return null;
+      for(const p of BRACKET_PHASES){
+        for(const m of (bracketData.left?.[p] || [])){
+          if(m.matchNumber === num) return m;
+        }
+        for(const m of (bracketData.right?.[p] || [])){
+          if(m.matchNumber === num) return m;
+        }
+      }
+      if(bracketData.center?.third?.matchNumber === num) return bracketData.center.third;
+      if(bracketData.center?.final?.matchNumber === num) return bracketData.center.final;
+      return null;
+    }
+
+    function focusMatchInList(matchNumber){
+      const el = document.getElementById(`match-${matchNumber}`);
+      if(!el) return false;
+      if(!el.classList.contains('is-open')) toggleMatch(matchNumber);
+      requestAnimationFrame(()=>{
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      return true;
+    }
+
+    async function navigateToBracketMatch(matchNumber){
+      const meta = findBracketMatchByNumber(matchNumber);
+      const targetDate = meta?.date;
+      const bracketReturnState = {
+        date: currentDate,
+        matchId: getOpenMatchId(),
+        bracket: true,
+        betList: listOpen,
+      };
+      const alreadyVisible = currentDate === targetDate
+        && document.getElementById(`match-${matchNumber}`);
+
+      closeBracketPanel(true);
+
+      if(!alreadyVisible){
+        await loadMatches(targetDate || undefined, false);
+        await new Promise((r)=> requestAnimationFrame(()=> requestAnimationFrame(r)));
+      }
+
+      if(!focusMatchInList(matchNumber)){
+        const label = meta?.home?.name && meta?.away?.name
+          ? `${meta.home.name} vs ${meta.away.name}`
+          : `Partido #${matchNumber}`;
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('errorMsg').textContent = `No se pudo abrir ${label}. Prueba otro día en el calendario.`;
+      } else {
+        document.getElementById('errorMsg').style.display = 'none';
+        if(navReady && !navApplying){
+          if(!history.state?.bracket){
+            pushNavState(bracketReturnState);
+          }
+          pushNavState({
+            date: targetDate || currentDate,
+            matchId: matchNumber,
+            bracket: false,
+            betList: listOpen,
+            returnToBracket: true,
+          });
+        }
+      }
+    }
+
+    function bindBracketMatchClicks(){
+      document.getElementById('bracketGrid')?.querySelectorAll('.brk-match[data-match]').forEach((btn)=>{
+        btn.addEventListener('click', ()=>{
+          navigateToBracketMatch(Number(btn.dataset.match));
+        });
+      });
+    }
+
+    async function loadKnockoutBracket(bustCache = false, silent = false){
+      const loading = document.getElementById('bracketLoading');
+      const grid = document.getElementById('bracketGrid');
+      const scroll = document.getElementById('bracketScroll');
+      const fab = document.getElementById('btnBracketFab');
+      const scrollLeft = scroll?.scrollLeft ?? 0;
+      const scrollTop = scroll?.scrollTop ?? 0;
+      if(!silent){
+        fab?.classList.add('is-loading');
+        if(fab) fab.disabled = true;
+        loading?.classList.remove('hidden');
+        grid?.classList.add('hidden');
+      }
+      try {
+        const refreshFlag = bustCache ? '&refresh=1' : '';
+        const res = await fetch(`${BRACKET_API}?_=${Date.now()}${refreshFlag}`, { cache: 'no-store' });
+        const data = await res.json();
+        if(!res.ok || !data.ok) throw new Error(data.error || 'Error al cargar cuadro');
+        bracketData = data;
+        updateBracketHeader(data);
+        document.getElementById('btnBracketPdf').disabled = !data.ok;
+        if(grid){
+          grid.innerHTML = renderKnockoutBracket(data);
+          grid.classList.remove('hidden');
+          bindBracketMatchClicks();
+        }
+        if(scroll){
+          scroll.scrollLeft = scrollLeft;
+          scroll.scrollTop = scrollTop;
+        }
+      } catch (err) {
+        if(!silent && grid){
+          grid.innerHTML = `<div class="brk-loading">${esc(err.message)}</div>`;
+          grid.classList.remove('hidden');
+        }
+      } finally {
+        if(!silent){
+          loading?.classList.add('hidden');
+          fab?.classList.remove('is-loading');
+          if(fab) fab.disabled = false;
+        }
+      }
+    }
+
+    function openBracketPanel(skipNav = false){
+      if(bracketOpen) return;
+      bracketOpen = true;
+      document.getElementById('bracketOverlay')?.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      if(bracketData) {
+        updateBracketHeader(bracketData);
+        document.getElementById('bracketGrid')?.classList.remove('hidden');
+        document.getElementById('bracketLoading')?.classList.add('hidden');
+        loadKnockoutBracket(false, true);
+      } else {
+        loadKnockoutBracket();
+      }
+      scheduleBracketPolling();
+      if(!skipNav && navReady && !navApplying){
+        pushNavState({
+          date: currentDate,
+          matchId: getOpenMatchId(),
+          bracket: true,
+          betList: listOpen,
+        });
+      }
+      updateBackButton();
+    }
+
+    function closeBracketPanel(skipNav = false){
+      if(!bracketOpen) return;
+      bracketOpen = false;
+      clearInterval(bracketPollTimer);
+      document.getElementById('bracketOverlay')?.classList.add('hidden');
+      document.body.style.overflow = '';
+      updateBackButton();
+    }
+
+    async function loadMatches(dateIso, silent=false, bustCache=false){
+      let date = null;
+      if(typeof dateIso === 'string'){
+        date = dateIso;
+      } else if(dateIso === null){
+        date = null;
+      } else if(silent && currentDate){
+        date = currentDate;
+      }
       if(!silent){
         document.getElementById('loadState').style.display='none';
         document.getElementById('errorMsg').style.display='none';
@@ -1241,8 +2717,12 @@
         document.getElementById('matchesContainer').innerHTML = renderSkeletonMatches(4);
       }
       try{
-        const url = date ? `${API_URL}?date=${encodeURIComponent(date)}` : API_URL;
-        const res=await fetch(url);
+        const cacheBust = `_=${Date.now()}`;
+        const refreshFlag = (!silent || bustCache) ? '&refresh=1' : '';
+        const url = date
+          ? `${API_URL}?date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
+          : `${API_URL}?${cacheBust}${refreshFlag}`;
+        const res=await fetch(url, { cache: 'no-store' });
         const data=await res.json();
         if(!res.ok||!data.ok) throw new Error(data.error||'Error API');
         const openId=silent ? document.querySelector('.match.is-open')?.dataset.id : null;
@@ -1250,6 +2730,7 @@
           ? !!document.querySelector(`#match-${openId} .view-switch button[data-view="live"].active`)
           : false;
         renderAll(data);
+        if(bracketOpen || bracketData) loadKnockoutBracket(false, true).catch(()=>{});
         if(silent && openId){
           toggleMatch(Number(openId));
           if(openLiveView){
@@ -1272,24 +2753,73 @@
 
     document.getElementById('btnPrevDay').addEventListener('click', ()=>{
       if(!currentDate || currentDate <= tournamentMin) return;
-      loadMatches(addDaysIso(currentDate, -1));
+      const newDate = addDaysIso(currentDate, -1);
+      pushNavState({ date: newDate, matchId: null, bracket: false, betList: listOpen });
+      loadMatches(newDate);
     });
     document.getElementById('btnNextDay').addEventListener('click', ()=>{
       if(!currentDate || currentDate >= tournamentMax) return;
-      loadMatches(addDaysIso(currentDate, 1));
+      const newDate = addDaysIso(currentDate, 1);
+      pushNavState({ date: newDate, matchId: null, bracket: false, betList: listOpen });
+      loadMatches(newDate);
     });
-    document.getElementById('btnToday').addEventListener('click', ()=> loadMatches(undefined, false));
+    document.getElementById('btnToday').addEventListener('click', ()=>{
+      pushNavState({ date: null, matchId: null, bracket: false, betList: listOpen });
+      loadMatches(undefined, false);
+    });
     document.getElementById('btnToggleList').addEventListener('click', ()=>{
       listOpen = !listOpen;
       document.getElementById('betDrawer').classList.toggle('open', listOpen);
+      if(navReady && !navApplying){
+        pushNavState({
+          date: currentDate,
+          matchId: getOpenMatchId(),
+          bracket: bracketOpen,
+          betList: listOpen,
+        });
+      }
+      updateBackButton();
     });
     document.getElementById('btnClear').addEventListener('click', ()=>{ if(confirm('¿Vaciar toda la lista?')) clearBets(); });
     document.getElementById('btnPdf').addEventListener('click', downloadPdf);
+    document.getElementById('btnRefreshFab').addEventListener('click', ()=> refreshPageContent({ silent: false, refreshOdds: true }));
+    document.getElementById('btnBracketFab').addEventListener('click', openBracketPanel);
+    document.getElementById('btnBracketPdf').addEventListener('click', downloadBracketPdf);
+    document.getElementById('btnCloseBracket').addEventListener('click', closeBracketFromUi);
+    document.getElementById('bracketOverlay')?.addEventListener('click', (e)=>{
+      if(e.target.id === 'bracketOverlay') closeBracketFromUi();
+    });
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){
+        if(bracketOpen){ e.preventDefault(); closeBracketFromUi(); return; }
+        if(listOpen){ e.preventDefault(); goBack(); return; }
+        if(getOpenMatchId()){ e.preventDefault(); goBack(); }
+      }
+    });
 
     renderBetList();
     initTutorial();
+    initNavigation();
+    initHeaderAutoHide();
+    initPwaInstall();
     startOddsPolling();
-    loadMatches();
+    scheduleDailyRefresh();
+    (async ()=>{
+      const params = new URLSearchParams(location.search);
+      const initialDate = params.get('date');
+      const initialMatch = params.get('match') ? Number(params.get('match')) : null;
+      const initialBracket = params.get('cuadro') === '1';
+      const initialLista = params.get('lista') === '1';
+      await loadMatches(initialDate || undefined, false);
+      if(initialMatch) openMatchById(initialMatch, { scroll: true });
+      if(initialLista){
+        listOpen = true;
+        document.getElementById('betDrawer').classList.add('open');
+      }
+      if(initialBracket) openBracketPanel(true);
+      navReady = true;
+      replaceNavState(snapshotNavState());
+    })();
   </script>
 </body>
 </html>
