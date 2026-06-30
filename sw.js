@@ -1,13 +1,15 @@
-const CACHE = 'coded-sports-v1';
+const CACHE = 'coded-sports-v20';
 const SHELL = [
   '/',
   '/index.html',
   '/CodedSportsLogo-svg.svg',
   '/manifest.webmanifest',
-  '/assets/styles/tokens.css',
-  '/assets/styles/base.css',
-  '/assets/styles/layout.css',
-  '/assets/styles/components.css',
+  '/assets/styles/tokens.css?v=15',
+  '/assets/styles/base.css?v=15',
+  '/assets/styles/layout.css?v=15',
+  '/assets/styles/components.css?v=16',
+  '/assets/styles/tools.css?v=15',
+  '/assets/js/user-tools.js?v=14',
 ];
 
 self.addEventListener('install', (event) => {
@@ -38,6 +40,21 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => response)
         .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }

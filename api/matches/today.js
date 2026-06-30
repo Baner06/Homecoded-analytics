@@ -28,6 +28,7 @@ export default async function handler(req, res) {
   try {
     if (req.query?.refresh === '1') {
       invalidateSoftCaches();
+      invalidateFixturesCache();
     }
     if (req.query?.full === '1') {
       invalidateFixturesCache();
