@@ -1,0 +1,291 @@
+.live-tracker {
+  margin-bottom: 1rem;
+  border-radius: var(--radius, 12px);
+  overflow: hidden;
+  background: linear-gradient(180deg, #0a1218 0%, #060a0e 100%);
+  border: 1px solid rgba(94, 179, 246, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.live-tracker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.live-tracker-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, #8b9cb3);
+}
+
+.live-tracker-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #ff6b6b;
+  text-transform: uppercase;
+}
+
+.live-tracker-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff6b6b;
+  box-shadow: 0 0 8px #ff6b6b;
+  animation: lt-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes lt-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.live-tracker-pitch-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background: radial-gradient(ellipse at center, rgba(30, 80, 40, 0.2), transparent 72%);
+}
+
+.live-tracker-pitch-inner {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  aspect-ratio: 100 / 64;
+}
+
+.live-tracker-pitch {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.live-tracker-pitch .pitch-grass {
+  fill: url(#ltGrass);
+}
+
+.live-tracker-pitch .pitch-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.72);
+  stroke-width: 0.35;
+}
+
+.live-tracker-pitch .pitch-trail {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 0.5;
+  stroke-linecap: round;
+  stroke-dasharray: 2 2;
+}
+
+.live-tracker-ball {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  transition: cx 0.8s ease, cy 0.8s ease;
+}
+
+.live-tracker-status {
+  position: absolute;
+  left: 0.625rem;
+  bottom: 0.625rem;
+  max-width: calc(100% - 1.25rem);
+  padding: 0.45rem 0.65rem 0.45rem 0.55rem;
+  background: rgba(8, 12, 18, 0.82);
+  border-left: 3px solid var(--accent, #5eb3f6);
+  border-radius: 4px;
+  backdrop-filter: blur(6px);
+}
+
+.live-tracker-status.danger { border-left-color: #ff6b6b; }
+.live-tracker-status.safe { border-left-color: #68d391; }
+.live-tracker-status.goal { border-left-color: #ffd166; }
+.live-tracker-status.substitution { border-left-color: #fc8181; }
+
+.live-tracker-status-team {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-style: italic;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.live-tracker-status-minute {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--accent, #5eb3f6);
+  margin-bottom: 0.15rem;
+}
+
+.live-tracker-status-detail {
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.58);
+  margin-top: 0.2rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.live-tracker-feed-item.is-current {
+  background: rgba(94, 179, 246, 0.08);
+  border-left: 2px solid var(--accent, #5eb3f6);
+}
+
+.live-tracker-status-label {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 0.15rem;
+  line-height: 1.4;
+}
+
+.live-tracker-event {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  width: min(88%, 280px);
+  background: rgba(12, 16, 22, 0.94);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 2;
+}
+
+.live-tracker-event.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.live-tracker-event-head {
+  padding: 0.45rem 0.65rem;
+  background: #c53030;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.live-tracker-event-title {
+  padding: 0.55rem 0.65rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.live-tracker-event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.6875rem;
+  color: #fff;
+}
+
+.live-tracker-event-row .lt-player {
+  font-weight: 700;
+}
+
+.live-tracker-event-row .lt-meta {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.625rem;
+  margin-top: 0.15rem;
+}
+
+.live-tracker-event-row .lt-badge {
+  font-weight: 700;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+}
+
+.live-tracker-event-row .lt-badge.out { color: #fc8181; }
+.live-tracker-event-row .lt-badge.in { color: #68d391; }
+
+.live-tracker-events {
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.live-tracker-events-title {
+  padding: 0.625rem 0.75rem 0.375rem;
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted, #8b9cb3);
+}
+
+.live-tracker-feed {
+  max-height: 260px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.live-tracker-feed-item {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.live-tracker-feed-item:last-child { border-bottom: none; }
+
+.live-tracker-feed-min {
+  color: var(--accent, #5eb3f6);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.live-tracker-feed-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.live-tracker-feed-item.goal .live-tracker-feed-min { color: #ffd166; }
+.live-tracker-feed-item.substitution .live-tracker-feed-min { color: #fc8181; }
+.live-tracker-feed-item.yellow-card .live-tracker-feed-min,
+.live-tracker-feed-item.red-card .live-tracker-feed-min { color: #f6ad55; }
+
+.live-tracker-loading,
+.live-tracker-error {
+  padding: 1rem 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted, #8b9cb3);
+}
+
+.live-tracker-pitch-inner .live-tracker-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.live-tracker-error { color: #fc8181; }
+
+@media (max-width: 480px) {
+  .live-tracker-pitch-inner { max-width: 100%; }
+  .live-tracker-event { width: 92%; }
+  .live-tracker-feed { max-height: 220px; }
+}

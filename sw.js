@@ -1,4 +1,4 @@
-const CACHE = 'coded-sports-v20';
+const CACHE = 'coded-sports-v40';
 const SHELL = [
   '/',
   '/index.html',
@@ -9,7 +9,11 @@ const SHELL = [
   '/assets/styles/layout.css?v=15',
   '/assets/styles/components.css?v=16',
   '/assets/styles/tools.css?v=15',
+  '/assets/styles/live-tracker.css?v=2',
+  '/assets/styles/match-stats.css?v=5',
   '/assets/js/user-tools.js?v=14',
+  '/assets/js/live-tracker.js?v=5',
+  '/assets/js/match-stats.js?v=10',
 ];
 
 self.addEventListener('install', (event) => {

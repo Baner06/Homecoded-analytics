@@ -18,6 +18,8 @@
   <link rel="stylesheet" href="/assets/styles/layout.css?v=15">
   <link rel="stylesheet" href="/assets/styles/components.css?v=16">
   <link rel="stylesheet" href="/assets/styles/tools.css?v=15">
+  <link rel="stylesheet" href="/assets/styles/live-tracker.css?v=2">
+  <link rel="stylesheet" href="/assets/styles/match-stats.css?v=5">
 </head>
 <body>
   <header id="siteHeader">
@@ -200,6 +202,8 @@
   </div>
 
   <script src="/assets/js/user-tools.js?v=14"></script>
+  <script src="/assets/js/live-tracker.js?v=5"></script>
+  <script src="/assets/js/match-stats.js?v=10"></script>
   <script>
     const API_URL = '/api/matches/today';
     const BRACKET_API = '/api/bracket/knockout';
@@ -315,6 +319,7 @@
     }
 
     function renderKnockoutExtra(m){
+      if(m.status !== 'live') return '';
       const ko = m.live?.knockout || m.knockout;
       if(!ko?.showExtraTime) return '';
       const score = m.score ? `${m.score.home}-${m.score.away}` : '—';
@@ -511,6 +516,8 @@
     }
 
     function closeAllMatches(){
+      stopLiveTrackers();
+      stopMatchStats();
       document.querySelectorAll('.match.is-open').forEach((n)=>{
         n.classList.remove('is-open');
         n.querySelector('.match-body').hidden = true;
@@ -562,6 +569,8 @@
       el.classList.add('is-open');
       el.querySelector('.match-body').hidden = false;
       loadMatchH2h(id);
+      startLiveTrackerForMatch(id);
+      loadMatchStats(id);
       if(scrollAnchor) scrollToMatchSection(id, scrollAnchor);
       else if(scroll){
         suppressHeaderReveal(1400);
@@ -1201,6 +1210,43 @@
       const n = Number(value) || 0;
       const pct = max > 0 ? (n / max) * 100 : 0;
       return n > 0 ? `max(${pct}%, 6px)` : '0';
+    }
+
+    function renderMatchStatsSlot(m){
+      return window.CodedSportsMatchStats?.renderSlot(m) || '';
+    }
+
+    function loadMatchStats(id){
+      const m = matchesData.find(x => x.id === id);
+      if(!m || (m.status !== 'live' && m.status !== 'finished')) return;
+      window.CodedSportsMatchStats?.loadForMatch(id, m.status === 'live');
+    }
+
+    function stopMatchStats(){
+      window.CodedSportsMatchStats?.stopAll?.();
+    }
+
+    function renderLiveTrackerSlot(m){
+      if(m.status !== 'live') return '';
+      return window.CodedSportsLiveTracker?.renderSlot(m.id)
+        || `<div class="live-tracker-slot" data-live-tracker data-match-id="${m.id}"></div>`;
+    }
+
+    function syncLiveTrackers(){
+      window.CodedSportsLiveTracker?.syncOpenLiveMatches?.();
+    }
+
+    function stopLiveTrackers(){
+      window.CodedSportsLiveTracker?.stopAll?.();
+    }
+
+    function startLiveTrackerForMatch(id){
+      const el = document.getElementById(`match-${id}`);
+      if(!el || el.dataset.live !== '1') return;
+      const slot = el.querySelector('[data-live-tracker]');
+      if(slot && window.CodedSportsLiveTracker?.start){
+        window.CodedSportsLiveTracker.start(id, slot);
+      }
     }
 
     function renderWinOutlook(m){
@@ -2386,13 +2432,14 @@
       const koNote = m.isKnockout ? '<p class="ko-market-note">Mercados de empate y doble oportunidad aplican al resultado en 90 min (sin prórroga).</p>' : '';
       const koExtra = renderKnockoutExtra(m);
       const koPen = renderKnockoutPenalties(m);
+      const liveTracker = renderLiveTrackerSlot(m);
       const st = m.actualStats;
       const cornersTitle = st?.totalCorners != null && (st.verified || st.liveStats)
         ? 'Córners · dato real' : 'Córners proj.';
       const cornersBlock = st?.homeCorners != null && (st.verified || st.liveStats)
         ? `<div class="card"><div class="card-title">${cornersTitle}</div>${renderCornerBars(m, st.homeCorners, st.awayCorners, st.totalCorners, true)}</div>`
         : `<div class="card"><div class="card-title">Córners proj.</div>${renderCornerBars(m, a.corners.home, a.corners.away, a.corners.total, false)}</div>`;
-      return `${renderWinOutlook(m)}${koExtra}${koPen}<div class="grid2">
+      return `${liveTracker}${renderMatchStatsSlot(m)}${renderWinOutlook(m)}${koExtra}${koPen}<div class="grid2">
         <div class="card"><div class="card-title">Dominio</div>
           <div style="display:flex;text-align:center;font-size:.75rem">
             <div style="flex:1">${flagImg(m.home)}<div style="margin-top:.25rem">${esc(m.home.name)}</div><div style="font-weight:700;color:var(--accent);margin-top:.25rem">${tip(a.dominance.home,'Dominio local')}%</div></div>
@@ -2465,10 +2512,14 @@
       suppressHeaderReveal();
       const open=el.classList.contains('is-open');
       document.querySelectorAll('.match.is-open').forEach(n=>{n.classList.remove('is-open');n.querySelector('.match-body').hidden=true;});
+      stopLiveTrackers();
+      stopMatchStats();
       if(!open){
         el.classList.add('is-open');
         el.querySelector('.match-body').hidden=false;
         loadMatchH2h(id);
+        startLiveTrackerForMatch(id);
+        loadMatchStats(id);
       }
     }
 
@@ -2574,7 +2625,11 @@
         const el = document.getElementById(`match-${id}`);
         if(!m || !el) return;
         const body = el.querySelector('.match-body');
-        if(body && !body.hidden) body.innerHTML = renderAnalysis(m);
+        if(body && !body.hidden){
+          body.innerHTML = renderAnalysis(m);
+          loadMatchStats(id);
+          startLiveTrackerForMatch(id);
+        }
       });
       bindBarTips();
       bindPieInteractions();
@@ -2696,6 +2751,7 @@
       schedulePortfolioPolling();
       supplementFromSofaScore(data).catch(()=>{});
       setTimeout(()=> supplementFromSofaScore(data).catch(()=>{}), 12000);
+      syncLiveTrackers();
     }
 
     function getBogotaParts(date = new Date()){
