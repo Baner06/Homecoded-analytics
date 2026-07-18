@@ -78,7 +78,7 @@
     body.innerHTML = '<p class="standings-loading">Cargando tabla…</p>';
 
     try {
-      const res = await fetch(`/api/leagues/${competitionId}/standings`, { cache: 'no-store' });
+      const res = await fetch(`/api/leagues?action=standings&competitionId=${encodeURIComponent(competitionId)}`, { cache: 'no-store' });
       const data = await res.json();
       if (!data.ok || !data.groups?.length) {
         body.innerHTML = '<p class="standings-empty">Todavía no hay tabla disponible para esta competición.</p>';

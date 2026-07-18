@@ -248,7 +248,7 @@
     let currentCompetitionId = null;
     let currentCompetitionMeta = null;
     function matchesApiUrl(){
-      return currentCompetitionId ? `/api/leagues/${currentCompetitionId}/matches` : API_URL;
+      return currentCompetitionId ? `/api/leagues?action=matches&competitionId=${encodeURIComponent(currentCompetitionId)}` : API_URL;
     }
 
     async function fetchJsonApi(url, options = {}){
@@ -3104,14 +3104,17 @@
         document.getElementById('daySummary').style.display='none';
         document.getElementById('matchesContainer').innerHTML = renderSkeletonMatches(4);
       }
+      const requestedCompetitionId = currentCompetitionId;
       try{
         const cacheBust = `_=${Date.now()}`;
         const refreshFlag = bustCache ? '&refresh=1' : '';
         const base = matchesApiUrl();
+        const joiner = base.includes('?') ? '&' : '?';
         const url = date
-          ? `${base}?date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
-          : `${base}?${cacheBust}${refreshFlag}`;
+          ? `${base}${joiner}date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
+          : `${base}${joiner}${cacheBust}${refreshFlag}`;
         const data = await fetchJsonApi(url);
+        if(requestedCompetitionId !== currentCompetitionId) return;
         if(!data.ok) throw new Error(data.error||'Error API');
         const prevMatches = silent && matchesData.length ? matchesData.slice() : [];
         const openId=silent ? getOpenMatchId() : null;

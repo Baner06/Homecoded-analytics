@@ -129,7 +129,7 @@
 
   async function fetchCatalog() {
     if (catalog) return catalog;
-    const res = await fetch('/api/leagues/catalog', { cache: 'no-store' });
+    const res = await fetch('/api/leagues?action=catalog', { cache: 'no-store' });
     const data = await res.json();
     catalog = data.continents || [];
     return catalog;
