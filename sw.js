@@ -1,4 +1,4 @@
-const CACHE = 'coded-sports-v40';
+const CACHE = 'coded-sports-v41';
 const SHELL = [
   '/',
   '/index.html',
@@ -11,7 +11,11 @@ const SHELL = [
   '/assets/styles/tools.css?v=15',
   '/assets/styles/live-tracker.css?v=2',
   '/assets/styles/match-stats.css?v=5',
+  '/assets/styles/visual-fx.css?v=1',
+  '/assets/styles/gesture.css?v=1',
   '/assets/js/user-tools.js?v=14',
+  '/assets/js/gesture-utils.js?v=1',
+  '/assets/js/visual-fx.js?v=1',
   '/assets/js/live-tracker.js?v=5',
   '/assets/js/match-stats.js?v=10',
 ];

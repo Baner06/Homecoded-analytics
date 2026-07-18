@@ -20,8 +20,12 @@
   <link rel="stylesheet" href="/assets/styles/tools.css?v=15">
   <link rel="stylesheet" href="/assets/styles/live-tracker.css?v=2">
   <link rel="stylesheet" href="/assets/styles/match-stats.css?v=5">
+  <link rel="stylesheet" href="/assets/styles/visual-fx.css?v=1">
+  <link rel="stylesheet" href="/assets/styles/gesture.css?v=1">
 </head>
 <body>
+  <div id="ambientBg" class="ambient-bg" aria-hidden="true"></div>
+  <canvas id="stadiumAtmosphere" class="stadium-atmosphere hidden" aria-hidden="true"></canvas>
   <header id="siteHeader">
     <div class="wrap" style="padding-bottom:0">
       <div class="header-bar" id="headerBar">
@@ -51,6 +55,10 @@
     </div>
   </header>
 
+  <div id="pullToRefreshIndicator" class="ptr-indicator" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+  </div>
+
   <div class="wrap" style="padding-top:.75rem">
     <section class="card cal-card" id="calendarBar" style="display:none">
       <div class="cal-strip">
@@ -78,6 +86,7 @@
 
   <div class="install-sheet hidden" id="installSheet" role="dialog" aria-modal="true" aria-labelledby="installTitle">
     <div class="install-card">
+      <div class="sheet-handle" data-drag-handle aria-hidden="true"></div>
       <p class="install-platform" id="installPlatform">Instalar app</p>
       <h2 id="installTitle">Añadir Coded Sports al inicio</h2>
       <p id="installIntro">Accede al Mundial 2026 con un toque, como una app nativa.</p>
@@ -109,6 +118,7 @@
 
   <div class="tools-overlay hidden" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle">
     <div class="tools-panel">
+      <div class="sheet-handle" data-drag-handle aria-hidden="true"></div>
       <header class="tools-header">
         <div>
           <h2 id="toolsTitle">Herramientas Coded Sports</h2>
@@ -160,6 +170,7 @@
 
   <div class="bracket-overlay hidden" id="bracketOverlay" role="dialog" aria-modal="true" aria-labelledby="bracketTitle">
     <div class="bracket-panel">
+      <div class="sheet-handle" data-drag-handle aria-hidden="true"></div>
       <header class="bracket-header">
         <div>
           <h2 id="bracketTitle">Cuadro eliminatorio</h2>
@@ -202,6 +213,8 @@
   </div>
 
   <script src="/assets/js/user-tools.js?v=14"></script>
+  <script src="/assets/js/gesture-utils.js?v=1"></script>
+  <script src="/assets/js/visual-fx.js?v=1"></script>
   <script src="/assets/js/live-tracker.js?v=5"></script>
   <script src="/assets/js/match-stats.js?v=10"></script>
   <script>

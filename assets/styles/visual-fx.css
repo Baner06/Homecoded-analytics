@@ -1,0 +1,87 @@
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--ambient-x, 50%) var(--ambient-y, 40%), rgba(94, 179, 246, 0.16), transparent 45%),
+    radial-gradient(circle at calc(100% - var(--ambient-x, 50%)) calc(100% - var(--ambient-y, 40%)), rgba(212, 175, 55, 0.10), transparent 50%);
+  filter: blur(40px);
+}
+
+.stadium-atmosphere {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: min(60vh, 30rem);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0) 100%);
+}
+
+.stadium-atmosphere.hidden {
+  display: none;
+}
+
+/* Team-color tint on the expanded match card, additive to .match.is-open in components.css */
+.match.is-open {
+  --tint-hue: 205;
+  box-shadow: 0 0 0 1px hsla(var(--tint-hue), 70%, 62%, 0.16), var(--shadow-md);
+}
+
+.match.is-open .match-body {
+  background: linear-gradient(180deg, hsla(var(--tint-hue), 70%, 55%, 0.05), transparent 40%);
+}
+
+.goal-celebration {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+  animation: goalFlash 1.6s ease-out forwards;
+  background: radial-gradient(circle, hsla(var(--celebrate-hue), 85%, 60%, 0.35), transparent 60%);
+}
+
+.goal-celebration.is-reduced {
+  animation: goalFlashReduced 0.9s ease-out forwards;
+}
+
+.goal-confetti-bit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+  background: hsl(var(--hue), 85%, 62%);
+  animation: goalConfetti 1.2s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes goalFlash {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes goalFlashReduced {
+  0% { opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@keyframes goalConfetti {
+  0% { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) rotate(320deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-confetti-bit {
+    display: none;
+  }
+}

@@ -154,6 +154,7 @@
 
     if (moment && (seq !== state.lastSequence || momentKey !== state.lastMomentId)) {
       flashOverlay(pitchInner, state);
+      if (moment.type === 'goal') global.CodedSportsVisualFx?.celebrateGoal?.(pitchInner, moment);
     } else if (overlayHtml) {
       requestAnimationFrame(() => {
         pitchInner.querySelector('[data-lt-event]')?.classList.add('is-visible');

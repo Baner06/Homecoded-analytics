@@ -1,0 +1,87 @@
+.sheet-handle {
+  display: none;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 0.3rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 0.55rem auto 0.15rem;
+  cursor: grab;
+  touch-action: none;
+}
+
+.install-card .sheet-handle,
+.bracket-panel .sheet-handle {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .tools-panel .sheet-handle {
+    display: block;
+  }
+}
+
+.install-card,
+.tools-panel,
+.bracket-panel {
+  transition: transform 0.18s ease;
+}
+
+.install-card.sheet-dragging,
+.tools-panel.sheet-dragging,
+.bracket-panel.sheet-dragging {
+  transition: none;
+}
+
+/* Pull-to-refresh indicator */
+.ptr-indicator {
+  position: fixed;
+  top: max(0.5rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translate(-50%, calc(-100% - 0.5rem + var(--ptr-dist, 0px)));
+  z-index: 45;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.ptr-indicator.is-pulling {
+  opacity: 0.9;
+  transition: none;
+}
+
+.ptr-indicator svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+}
+
+.ptr-indicator.is-armed svg {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-card,
+  .tools-panel,
+  .bracket-panel,
+  .ptr-indicator,
+  .ptr-indicator svg {
+    transition-duration: 0.01ms !important;
+  }
+}
