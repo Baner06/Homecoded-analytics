@@ -1,0 +1,228 @@
+.league-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.league-worldcup-row,
+.league-continent-row,
+.league-country-row,
+.league-comp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background var(--ease), border-color var(--ease);
+}
+
+.league-worldcup-row {
+  border-color: rgba(212, 175, 55, 0.3);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.league-worldcup-row:hover,
+.league-continent-row:not(.is-disabled):hover,
+.league-country-row:hover,
+.league-comp-row:not(.is-disabled):hover {
+  background: rgba(94, 179, 246, 0.08);
+  border-color: rgba(94, 179, 246, 0.25);
+}
+
+.league-continent-row.is-disabled,
+.league-comp-row.is-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.league-continent {
+  margin-bottom: 0.4rem;
+}
+
+.league-continent-row {
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.league-continent-tag,
+.league-comp-tag {
+  font-size: 0.625rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.league-country-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.5rem 0.6rem;
+}
+
+.league-country-flag {
+  width: 1.5rem;
+  height: 1.125rem;
+  object-fit: cover;
+  border-radius: 0.2rem;
+  flex-shrink: 0;
+}
+
+.league-country-name {
+  font-weight: 600;
+  flex: 1;
+}
+
+.league-country-chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.league-comp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.35rem 0 0.5rem 1.9rem;
+}
+
+.league-comp-row {
+  font-size: 0.75rem;
+}
+
+.league-comp-icon {
+  flex-shrink: 0;
+}
+
+.league-comp-name {
+  flex: 1;
+}
+
+/* Banner "viendo esta liga" sobre la lista de partidos */
+.league-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.league-banner-flag {
+  width: 1.75rem;
+  height: 1.3125rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+.league-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.league-banner-country {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.league-banner-comp {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.league-banner-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* Tabla de posiciones */
+.standings-subtitle {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.standings-group-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.standings-group-title:first-child {
+  margin-top: 0;
+}
+
+.standings-scroll {
+  overflow-x: auto;
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.standings-table th {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+
+.standings-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.standings-team {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.standings-team img {
+  border-radius: 0.2rem;
+  flex-shrink: 0;
+}
+
+.standings-pts {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.standings-loading,
+.standings-empty {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0.5rem 0;
+}
+
+.standings-note {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin-bottom: 0.75rem;
+}

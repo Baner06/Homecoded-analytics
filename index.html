@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/assets/styles/match-stats.css?v=5">
   <link rel="stylesheet" href="/assets/styles/visual-fx.css?v=1">
   <link rel="stylesheet" href="/assets/styles/gesture.css?v=1">
+  <link rel="stylesheet" href="/assets/styles/leagues.css?v=1">
 </head>
 <body>
   <div id="ambientBg" class="ambient-bg" aria-hidden="true"></div>
@@ -42,6 +43,7 @@
           <button type="button" class="btn btn-help" id="btnHelp" title="Ver tutorial" aria-label="Ver tutorial">?</button>
           <button type="button" class="btn btn-accent btn-tools-header" id="btnToolsHeader" title="Herramientas">Herramientas</button>
           <button type="button" class="btn btn-accent" id="btnToggleList">Ver lista (<span id="betBadge">0</span>)</button>
+          <button type="button" class="btn btn-accent" id="btnLeagueMenu" aria-label="Ligas" title="Ligas">☰</button>
         </div>
         </div>
       </div>
@@ -80,6 +82,17 @@
     <p id="daySummary" style="display:none;font-size:.75rem;color:var(--muted);margin-bottom:.625rem"></p>
     <div id="noMatchesMsg" class="alert alert-err" style="display:none;background:rgba(94,179,246,.08);border-color:rgba(94,179,246,.2);color:#bee3f8"></div>
     <div id="errorMsg" class="alert alert-err" style="display:none"></div>
+    <div id="leagueBanner" class="league-banner" hidden>
+      <img class="league-banner-flag" id="leagueBannerFlag" src="" alt="" width="28" height="21">
+      <div class="league-banner-text">
+        <p class="league-banner-country" id="leagueBannerCountry"></p>
+        <p class="league-banner-comp" id="leagueBannerComp"></p>
+      </div>
+      <div class="league-banner-actions">
+        <button type="button" class="btn" id="btnLeagueStandings">Tabla</button>
+        <button type="button" class="btn btn-danger" id="btnLeagueExitBanner">✕ Mundial</button>
+      </div>
+    </div>
     <div id="matchesContainer"></div>
     <footer class="site-footer">
       <p class="site-footer-copy">© 2026 Coded Sports. Todos los derechos reservados.</p>
@@ -223,12 +236,20 @@
   <script src="/assets/js/user-tools.js?v=14"></script>
   <script src="/assets/js/gesture-utils.js?v=1"></script>
   <script src="/assets/js/visual-fx.js?v=1"></script>
+  <script src="/assets/js/leagues.js?v=1"></script>
+  <script src="/assets/js/standings.js?v=1"></script>
   <script src="/assets/js/live-tracker.js?v=5"></script>
   <script src="/assets/js/match-stats.js?v=10"></script>
   <script>
     const API_URL = '/api/matches/today';
     const BRACKET_API = '/api/bracket/knockout';
     const SITE_URL = 'coded-sports-analytics.vercel.app';
+
+    let currentCompetitionId = null;
+    let currentCompetitionMeta = null;
+    function matchesApiUrl(){
+      return currentCompetitionId ? `/api/leagues/${currentCompetitionId}/matches` : API_URL;
+    }
 
     async function fetchJsonApi(url, options = {}){
       const timeoutMs = options.timeout ?? 60000;
@@ -1209,6 +1230,7 @@
     function catCls(id){return id==='recomendable'?'cat-recomendable':id==='probable'?'cat-probable':'cat-poco'}
 
     function flagImg(t){
+      if(t.logo) return `<img class="flag" src="${esc(t.logo)}" alt="" loading="lazy" width="22" height="22" onerror="this.outerHTML='<span class=\\'flag flag-emoji\\'>${t.flag||'🏳️'}</span>'">`;
       if(t.flagUrl) return `<img class="flag" src="${esc(t.flagUrl)}" alt="" loading="lazy" width="22" height="16" onerror="this.outerHTML='<span class=\\'flag flag-emoji\\'>${t.flag}</span>'">`;
       return `<span class="flag flag-emoji" aria-hidden="true">${t.flag}</span>`;
     }
@@ -2737,7 +2759,9 @@
       document.getElementById('loadState').style.display='none';
       document.getElementById('errorMsg').style.display='none';
       updateCalendarUI(data);
-      document.getElementById('headerSub').textContent=`Mundial 2026 · ${data.matchCount} partido(s)`;
+      document.getElementById('headerSub').textContent = currentCompetitionMeta
+        ? `${currentCompetitionMeta.country.name} · ${data.matchCount} partido(s)`
+        : `Mundial 2026 · ${data.matchCount} partido(s)`;
       document.getElementById('daySummary').style.display='block';
       document.getElementById('daySummary').textContent='Toca un partido para analizar. Usa el icono de marcador para guardar predicciones.';
 
@@ -3083,9 +3107,10 @@
       try{
         const cacheBust = `_=${Date.now()}`;
         const refreshFlag = bustCache ? '&refresh=1' : '';
+        const base = matchesApiUrl();
         const url = date
-          ? `${API_URL}?date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
-          : `${API_URL}?${cacheBust}${refreshFlag}`;
+          ? `${base}?date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
+          : `${base}?${cacheBust}${refreshFlag}`;
         const data = await fetchJsonApi(url);
         if(!data.ok) throw new Error(data.error||'Error API');
         const prevMatches = silent && matchesData.length ? matchesData.slice() : [];
@@ -3131,6 +3156,51 @@
         }
       }
     }
+
+    function updateLeagueBanner(){
+      const banner = document.getElementById('leagueBanner');
+      if(!currentCompetitionMeta){
+        banner.hidden = true;
+        return;
+      }
+      banner.hidden = false;
+      const flagEl = document.getElementById('leagueBannerFlag');
+      const flagUrl = currentCompetitionMeta.country.iso ? `https://flagcdn.com/w80/${currentCompetitionMeta.country.iso}.png` : '';
+      flagEl.src = flagUrl;
+      flagEl.style.visibility = flagUrl ? 'visible' : 'hidden';
+      document.getElementById('leagueBannerCountry').textContent = currentCompetitionMeta.country.name;
+      document.getElementById('leagueBannerComp').textContent = currentCompetitionMeta.competition.officialName;
+    }
+
+    function selectCompetition(competitionId){
+      const meta = window.CodedSportsLeagues?.getCompetitionMeta?.(competitionId);
+      if(!meta) return;
+      currentCompetitionId = competitionId;
+      currentCompetitionMeta = meta;
+      updateLeagueBanner();
+      loadMatches(undefined, false);
+    }
+
+    function exitToWorldCup(){
+      if(!currentCompetitionId) return;
+      currentCompetitionId = null;
+      currentCompetitionMeta = null;
+      updateLeagueBanner();
+      loadMatches(undefined, false);
+    }
+
+    document.getElementById('btnLeagueMenu').addEventListener('click', ()=>{
+      window.CodedSportsLeagues?.openMenu?.();
+    });
+    document.getElementById('btnLeagueExitBanner').addEventListener('click', exitToWorldCup);
+    document.getElementById('btnLeagueStandings').addEventListener('click', ()=>{
+      if(!currentCompetitionId || !currentCompetitionMeta) return;
+      window.CodedSportsStandings?.open?.(currentCompetitionId, currentCompetitionMeta.competition.officialName);
+    });
+    window.CodedSportsLeagues?.init?.({
+      onSelectCompetition: selectCompetition,
+      onExitToWorldCup: exitToWorldCup,
+    });
 
     document.getElementById('btnPrevDay').addEventListener('click', ()=>{
       if(!currentDate || currentDate <= tournamentMin) return;
