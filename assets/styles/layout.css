@@ -61,12 +61,19 @@ header.header-collapsed .header-bar {
 }
 
 .site-logo {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 641px) {
+  .site-logo {
+    width: 3rem;
+    height: 3rem;
+  }
 }
 
 header h1 {

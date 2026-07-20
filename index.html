@@ -35,13 +35,12 @@
           <img src="/CodedSportsLogo-svg.svg" alt="Coded Sports" class="site-logo" width="40" height="40">
           <div>
             <h1>Coded Sports</h1>
-            <p id="headerSub">Mundial 2026 · Cargando...</p>
+            <p id="headerSub">Mundial 2026 · 0 partido(s)</p>
           </div>
         </div>
         <div class="header-actions">
           <button type="button" class="btn btn-nav-back" id="btnNavBack" aria-label="Volver">← Volver</button>
           <button type="button" class="btn btn-help" id="btnHelp" title="Ver tutorial" aria-label="Ver tutorial">?</button>
-          <button type="button" class="btn btn-accent btn-tools-header" id="btnToolsHeader" title="Herramientas">Herramientas</button>
           <button type="button" class="btn btn-accent" id="btnToggleList">Ver lista (<span id="betBadge">0</span>)</button>
           <button type="button" class="btn btn-accent" id="btnLeagueMenu" aria-label="Ligas" title="Ligas">☰</button>
         </div>
@@ -76,6 +75,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </div>
+      <div class="cal-days" id="calDaysStrip" role="tablist" aria-label="Próximos 8 días"></div>
       <button type="button" class="cal-today" id="btnToday" style="display:none">↩ Volver a hoy</button>
     </section>
     <section class="card" id="loadState" style="display:none" aria-hidden="true"></section>
@@ -245,6 +245,7 @@
     const BRACKET_API = '/api/bracket/knockout';
     const SITE_URL = 'coded-sports-analytics.vercel.app';
 
+    const LAST_COMPETITION_KEY = 'csLastCompetitionId';
     let currentCompetitionId = null;
     let currentCompetitionMeta = null;
     function matchesApiUrl(){
@@ -486,6 +487,8 @@
     let currentDate = null;
     let tournamentMin = null;
     let tournamentMax = null;
+    let todayAnchorDate = null;
+    const DAY_STRIP_LEN = 9;
     let eventsBound = false;
     let navApplying = false;
     let navReady = false;
@@ -1206,6 +1209,8 @@
       currentDate = data.date;
       tournamentMin = data.tournamentMinDate;
       tournamentMax = data.tournamentMaxDate;
+      if(data.isToday) todayAnchorDate = data.date;
+      else if(!todayAnchorDate) todayAnchorDate = data.date;
       document.getElementById('calendarBar').style.display = 'block';
       document.getElementById('calDateLabel').textContent = data.dateLabel;
       document.getElementById('calSubLabel').textContent = data.isToday
@@ -1215,6 +1220,32 @@
       document.getElementById('btnPrevDay').disabled = currentDate <= tournamentMin;
       document.getElementById('btnNextDay').disabled = currentDate >= tournamentMax;
       document.getElementById('btnToday').style.display = data.isToday ? 'none' : 'block';
+      renderDayStrip();
+    }
+
+    function renderDayStrip(){
+      const strip = document.getElementById('calDaysStrip');
+      if(!strip || !todayAnchorDate) return;
+      const dowFmt = new Intl.DateTimeFormat('es-CO', { weekday: 'short', timeZone: 'UTC' });
+      strip.innerHTML = '';
+      for(let i = 0; i < DAY_STRIP_LEN; i++){
+        const iso = addDaysIso(todayAnchorDate, i);
+        const [y, m, d] = iso.split('-').map(Number);
+        const dow = dowFmt.format(new Date(Date.UTC(y, m - 1, d))).replace('.', '');
+        const isActive = iso === currentDate;
+        const isToday = iso === todayAnchorDate;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-day-chip' + (isActive ? ' is-active' : '') + (isToday && !isActive ? ' is-today' : '');
+        btn.setAttribute('aria-pressed', String(isActive));
+        btn.innerHTML = `<span class="cal-day-dow">${isToday ? 'Hoy' : esc(dow)}</span><span class="cal-day-num">${d}</span>`;
+        btn.addEventListener('click', () => {
+          if(iso === currentDate) return;
+          pushNavState({ date: iso, matchId: null, bracket: false, betList: listOpen });
+          loadMatches(iso);
+        });
+        strip.appendChild(btn);
+      }
     }
 
     function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
@@ -2760,7 +2791,7 @@
       document.getElementById('errorMsg').style.display='none';
       updateCalendarUI(data);
       document.getElementById('headerSub').textContent = currentCompetitionMeta
-        ? `${currentCompetitionMeta.country.name} · ${data.matchCount} partido(s)`
+        ? `${currentCompetitionMeta.country.name} · ${currentCompetitionMeta.competition.officialName}`
         : `Mundial 2026 · ${data.matchCount} partido(s)`;
       document.getElementById('daySummary').style.display='block';
       document.getElementById('daySummary').textContent='Toca un partido para analizar. Usa el icono de marcador para guardar predicciones.';
@@ -3164,6 +3195,7 @@
       const banner = document.getElementById('leagueBanner');
       if(!currentCompetitionMeta){
         banner.hidden = true;
+        updateBracketFabVisibility();
         return;
       }
       banner.hidden = false;
@@ -3173,21 +3205,32 @@
       flagEl.style.visibility = flagUrl ? 'visible' : 'hidden';
       document.getElementById('leagueBannerCountry').textContent = currentCompetitionMeta.country.name;
       document.getElementById('leagueBannerComp').textContent = currentCompetitionMeta.competition.officialName;
+      updateBracketFabVisibility();
     }
 
-    function selectCompetition(competitionId){
+    function updateBracketFabVisibility(){
+      const fab = document.getElementById('btnBracketFab');
+      if(!fab) return;
+      // El cuadro eliminatorio solo tiene datos reales para el Mundial 2026;
+      // las copas de club (tier "cup") aún no generan su propio bracket.
+      fab.classList.toggle('hidden', !!currentCompetitionId);
+    }
+
+    function selectCompetition(competitionId, opts = {}){
       const meta = window.CodedSportsLeagues?.getCompetitionMeta?.(competitionId);
       if(!meta) return;
       currentCompetitionId = competitionId;
       currentCompetitionMeta = meta;
+      try { localStorage.setItem(LAST_COMPETITION_KEY, competitionId); } catch {}
       updateLeagueBanner();
-      loadMatches(undefined, false);
+      if(!opts.skipLoad) loadMatches(undefined, false);
     }
 
     function exitToWorldCup(){
       if(!currentCompetitionId) return;
       currentCompetitionId = null;
       currentCompetitionMeta = null;
+      try { localStorage.removeItem(LAST_COMPETITION_KEY); } catch {}
       updateLeagueBanner();
       loadMatches(undefined, false);
     }
@@ -3200,7 +3243,7 @@
       if(!currentCompetitionId || !currentCompetitionMeta) return;
       window.CodedSportsStandings?.open?.(currentCompetitionId, currentCompetitionMeta.competition.officialName);
     });
-    window.CodedSportsLeagues?.init?.({
+    const leaguesCatalogReady = window.CodedSportsLeagues?.init?.({
       onSelectCompetition: selectCompetition,
       onExitToWorldCup: exitToWorldCup,
     });
@@ -3265,6 +3308,15 @@
       const initialMatch = params.get('match') ? Number(params.get('match')) : null;
       const initialBracket = params.get('cuadro') === '1';
       const initialLista = params.get('lista') === '1';
+      if(!initialDate){
+        try {
+          const savedCompetitionId = localStorage.getItem(LAST_COMPETITION_KEY);
+          if(savedCompetitionId){
+            await leaguesCatalogReady;
+            selectCompetition(savedCompetitionId, { skipLoad: true });
+          }
+        } catch {}
+      }
       await loadMatches(initialDate || undefined, false);
       if(initialMatch) openMatchById(initialMatch, { scroll: true });
       if(initialLista){

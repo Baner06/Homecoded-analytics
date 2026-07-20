@@ -181,7 +181,7 @@
   function init(opts = {}) {
     onSelectCompetition = opts.onSelectCompetition || null;
     onExitToWorldCup = opts.onExitToWorldCup || null;
-    fetchCatalog();
+    return fetchCatalog();
   }
 
   global.CodedSportsLeagues = {
