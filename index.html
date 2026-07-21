@@ -32,7 +32,7 @@
       <div class="header-bar" id="headerBar">
         <div class="header-top">
         <div class="brand">
-          <img src="/CodedSportsLogo-svg.svg" alt="Coded Sports" class="site-logo" width="40" height="40">
+          <img src="/CodedSportsLogo-svg.svg" alt="Coded Sports" class="site-logo" id="siteLogoHome" width="40" height="40" role="button" tabindex="0" aria-label="Ir al inicio">
           <div>
             <h1>Coded Sports</h1>
             <p id="headerSub">Mundial 2026 · 0 partido(s)</p>
@@ -90,7 +90,6 @@
       </div>
       <div class="league-banner-actions">
         <button type="button" class="btn" id="btnLeagueStandings">Tabla</button>
-        <button type="button" class="btn btn-danger" id="btnLeagueExitBanner">✕ Mundial</button>
       </div>
     </div>
     <div id="matchesContainer"></div>
@@ -3235,10 +3234,29 @@
       loadMatches(undefined, false);
     }
 
+    function goHome(){
+      if(bracketOpen) closeBracketFromUi();
+      if(getOpenMatchId()) closeOpenMatchNav();
+      if(listOpen){
+        listOpen = false;
+        document.getElementById('betDrawer').classList.remove('open');
+      }
+      if(currentCompetitionId){
+        exitToWorldCup();
+      } else if(currentDate && currentDate !== todayAnchorDate){
+        pushNavState({ date: null, matchId: null, bracket: false, betList: false });
+        loadMatches(undefined, false);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById('siteLogoHome').addEventListener('click', goHome);
+    document.getElementById('siteLogoHome').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); goHome(); }
+    });
     document.getElementById('btnLeagueMenu').addEventListener('click', ()=>{
       window.CodedSportsLeagues?.openMenu?.();
     });
-    document.getElementById('btnLeagueExitBanner').addEventListener('click', exitToWorldCup);
     document.getElementById('btnLeagueStandings').addEventListener('click', ()=>{
       if(!currentCompetitionId || !currentCompetitionMeta) return;
       window.CodedSportsStandings?.open?.(currentCompetitionId, currentCompetitionMeta.competition.officialName);

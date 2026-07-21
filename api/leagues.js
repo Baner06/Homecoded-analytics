@@ -7,6 +7,7 @@ import { buildCatalogTree, getCompetition } from '../lib/competitions.js';
 import { getLeagueTodayMatches, invalidateLeagueCaches } from '../lib/leagueFixtures.js';
 import { getStandings } from '../lib/leagueStandings.js';
 import { loadCompetitionMatches } from '../lib/liveScores.js';
+import { loadSofaCompetitionMatches } from '../lib/sofaCompetitionMatches.js';
 import { formatDateLongColombia, getDateISOInColombia, addDaysToDateIso } from '../lib/timezone.js';
 
 export const config = { runtime: 'nodejs' };
@@ -65,7 +66,10 @@ async function handleMatches(req, res, competitionId) {
 async function getRecentFinishedMatches(competition) {
   const today = getDateISOInColombia();
   const dates = Array.from({ length: 14 }, (_, i) => addDaysToDateIso(today, -i));
-  const perDay = await Promise.all(dates.map((d) => loadCompetitionMatches(d, competition.espnSlug)));
+  const loader = competition.provider === 'sofascore'
+    ? (d) => loadSofaCompetitionMatches(d, competition.sofaTournamentId, competition.sofaSeasonId)
+    : (d) => loadCompetitionMatches(d, competition.espnSlug);
+  const perDay = await Promise.all(dates.map(loader));
   return perDay.flat()
     .filter((m) => m.isFinished)
     .map((m) => ({

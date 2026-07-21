@@ -67,6 +67,16 @@ header.header-collapsed .header-bar {
   object-fit: cover;
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.site-logo:hover {
+  transform: scale(1.05);
+}
+
+.site-logo:active {
+  transform: scale(0.95);
 }
 
 @media (min-width: 641px) {
