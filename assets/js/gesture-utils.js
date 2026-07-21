@@ -97,14 +97,19 @@
   // Swipe between days
   // ---------------------------------------------------------------
   function initSwipeDays() {
-    const zone = document.getElementById('matchesContainer');
+    // Ligado a #mainContent (no #matchesContainer): cuando no hay partidos ese
+    // día, matchesContainer queda vacío (altura 0) y el mensaje "no hay
+    // partidos" es un elemento hermano — el dedo nunca toca matchesContainer.
+    const zone = document.getElementById('mainContent');
     if (!zone) return;
     let startX = 0;
     let startY = 0;
     let tracking = false;
 
     zone.addEventListener('touchstart', (e) => {
-      if (e.touches.length !== 1) return;
+      // El propio calendario tiene sus controles de fecha (flechas, tira de
+      // días con scroll horizontal propio) — no lo tratamos como swipe de día.
+      if (e.touches.length !== 1 || e.target.closest('#calendarBar')) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       tracking = true;
