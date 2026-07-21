@@ -4,6 +4,53 @@
   gap: 0.4rem;
 }
 
+.league-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.league-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg);
+  padding-bottom: 0.15rem;
+}
+
+.league-search-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.league-search-input:focus {
+  outline: none;
+  border-color: rgba(94, 179, 246, 0.5);
+}
+
+.league-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.league-country-row-static {
+  cursor: default;
+}
+
+.league-search-empty {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0.5rem 0;
+  text-align: center;
+}
+
 .league-worldcup-row,
 .league-continent-row,
 .league-country-row,
@@ -32,7 +79,7 @@
 
 .league-worldcup-row:hover,
 .league-continent-row:not(.is-disabled):hover,
-.league-country-row:hover,
+.league-country-row:not(.league-country-row-static):hover,
 .league-comp-row:not(.is-disabled):hover {
   background: rgba(94, 179, 246, 0.08);
   border-color: rgba(94, 179, 246, 0.25);

@@ -7,6 +7,7 @@
   let getFavoriteCount = null;
   let openCountryCode = null;
   let openContinentId = 'sudamerica';
+  let searchQuery = '';
 
   function esc(s) {
     return String(s ?? '')
@@ -14,6 +15,13 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function normalize(s) {
+    return String(s ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '');
   }
 
   function flagUrl(iso) {
@@ -60,12 +68,54 @@
     </div>`;
   }
 
+  function matchesSearch(country, comp, normQuery) {
+    return normalize(country.name).includes(normQuery) || normalize(comp.officialName).includes(normQuery);
+  }
+
+  function searchGroupHtml(country, continent, normQuery) {
+    const matched = country.competitions.filter((c) => matchesSearch(country, c, normQuery));
+    if (!matched.length) return '';
+    const flag = flagUrl(country.iso);
+    return `<div class="league-country is-open">
+      <div class="league-country-row league-country-row-static">
+        ${flag ? `<img class="league-country-flag" src="${flag}" alt="" width="24" height="18" loading="lazy">` : '<span class="league-country-flag" aria-hidden="true">🏳️</span>'}
+        <span class="league-country-name">${esc(country.name)}</span>
+        <span class="league-continent-tag">${esc(continent.name)}</span>
+      </div>
+      <div class="league-comp-list">${matched.map((c) => competitionRowHtml(country.code, c)).join('')}</div>
+    </div>`;
+  }
+
+  function renderSearchResults(query) {
+    const normQuery = normalize(query);
+    const groups = [];
+    for (const continent of catalog) {
+      if (!continent.available) continue;
+      for (const country of continent.countries) {
+        const html = searchGroupHtml(country, continent, normQuery);
+        if (html) groups.push(html);
+      }
+    }
+    if (!groups.length) {
+      return `<p class="league-search-empty">Sin resultados para «${esc(query)}»</p>`;
+    }
+    return `<div class="league-search-results">${groups.join('')}</div>`;
+  }
+
   function renderMenuBody() {
     if (!overlayEl) return;
-    const body = overlayEl.querySelector('.league-panel-body');
-    if (!body || !catalog) return;
+    const content = overlayEl.querySelector('#leaguePanelContent');
+    if (!content || !catalog) return;
+
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      content.innerHTML = renderSearchResults(trimmedQuery);
+      bindContentEvents(content);
+      return;
+    }
+
     const favCount = getFavoriteCount?.() ?? 0;
-    body.innerHTML = `
+    content.innerHTML = `
       <button type="button" class="league-worldcup-row" id="btnLeagueFavorites">
         <span class="league-comp-icon" aria-hidden="true">❤</span>
         <span class="league-comp-name">Favoritos</span>
@@ -77,19 +127,19 @@
       </button>
       ${catalog.map(continentRowHtml).join('')}
     `;
-    bindMenuBodyEvents(body);
+    bindContentEvents(content);
   }
 
-  function bindMenuBodyEvents(body) {
-    body.querySelector('#btnLeagueFavorites')?.addEventListener('click', () => {
+  function bindContentEvents(content) {
+    content.querySelector('#btnLeagueFavorites')?.addEventListener('click', () => {
       closeMenu();
       onSelectFavorites?.();
     });
-    body.querySelector('#btnLeagueExit')?.addEventListener('click', () => {
+    content.querySelector('#btnLeagueExit')?.addEventListener('click', () => {
       closeMenu();
       onExitToWorldCup?.();
     });
-    body.querySelectorAll('.league-continent-row:not(.is-disabled)').forEach((btn) => {
+    content.querySelectorAll('.league-continent-row:not(.is-disabled)').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.continent;
         openContinentId = openContinentId === id ? null : id;
@@ -97,14 +147,14 @@
         renderMenuBody();
       });
     });
-    body.querySelectorAll('.league-country-row').forEach((btn) => {
+    content.querySelectorAll('.league-country-row:not(.league-country-row-static)').forEach((btn) => {
       btn.addEventListener('click', () => {
         const code = btn.dataset.country;
         openCountryCode = openCountryCode === code ? null : code;
         renderMenuBody();
       });
     });
-    body.querySelectorAll('.league-comp-row:not(.is-disabled)').forEach((btn) => {
+    content.querySelectorAll('.league-comp-row:not(.is-disabled)').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.compId;
         closeMenu();
@@ -130,12 +180,21 @@
           </div>
           <button type="button" class="bracket-close" id="btnCloseLeagues" aria-label="Cerrar">&times;</button>
         </header>
-        <div class="tools-body league-panel-body"></div>
+        <div class="tools-body league-panel-body">
+          <div class="league-search-wrap">
+            <input type="search" id="leagueSearchInput" class="league-search-input" placeholder="Buscar liga o país..." autocomplete="off">
+          </div>
+          <div class="league-panel-content" id="leaguePanelContent"></div>
+        </div>
       </div>
     `;
     document.body.appendChild(el);
     el.querySelector('#btnCloseLeagues').addEventListener('click', closeMenu);
     el.addEventListener('click', (e) => { if (e.target === el) closeMenu(); });
+    el.querySelector('#leagueSearchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderMenuBody();
+    });
     return el;
   }
 
@@ -150,6 +209,9 @@
   function openMenu() {
     if (!overlayEl) overlayEl = buildOverlay();
     overlayEl.classList.remove('hidden');
+    searchQuery = '';
+    const searchInput = overlayEl.querySelector('#leagueSearchInput');
+    if (searchInput) searchInput.value = '';
     fetchCatalog().then(renderMenuBody);
     if (global.CodedSportsGestures) {
       global.CodedSportsGestures.createDraggableSheet(

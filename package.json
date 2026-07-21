@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Coded Sports — API y dashboard Mundial 2026"
+  "description": "Coded Sports — API y dashboard Mundial 2026",
+  "scripts": {
+    "test": "node --test"
+  }
 }
