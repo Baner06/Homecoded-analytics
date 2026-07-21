@@ -247,6 +247,12 @@
 
     const FAVORITES_KEY = 'csFavoriteCompetitionIds';
     const FAVORITES_ID = 'favorites';
+    const FAVORITES_FLAG_SRC = 'data:image/svg+xml,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 21">'
+      + '<rect width="28" height="21" rx="2" fill="#ff5c7a"/>'
+      + '<path d="M14 16.6c-.28 0-.55-.1-.76-.3l-4.37-3.98C7.2 10.9 6.4 9.7 6.4 8.15c0-1.87 1.5-3.35 3.35-3.35 1.06 0 2.07.5 2.72 1.35l.53.68.53-.68c.65-.85 1.66-1.35 2.72-1.35 1.85 0 3.35 1.48 3.35 3.35 0 1.55-.8 2.75-2.47 4.17l-4.37 3.98c-.21.2-.48.3-.76.3z" fill="#fff"/>'
+      + '</svg>'
+    );
     let currentCompetitionId = null;
     let currentCompetitionMeta = null;
     function matchesApiUrl(){
@@ -3285,13 +3291,30 @@
 
     function updateLeagueBanner(){
       const banner = document.getElementById('leagueBanner');
+      const standingsBtn = document.getElementById('btnLeagueStandings');
+      const favBtn = document.getElementById('btnLeagueFavorite');
+      const flagEl = document.getElementById('leagueBannerFlag');
+
+      if(currentCompetitionId === FAVORITES_ID){
+        banner.hidden = false;
+        flagEl.src = FAVORITES_FLAG_SRC;
+        flagEl.style.visibility = 'visible';
+        document.getElementById('leagueBannerCountry').textContent = 'FAVORITOS';
+        document.getElementById('leagueBannerComp').textContent = 'TUS LIGAS FAVORITAS';
+        standingsBtn.style.display = 'none';
+        favBtn.style.display = 'none';
+        updateBracketFabVisibility();
+        return;
+      }
+      standingsBtn.style.display = '';
+      favBtn.style.display = '';
+
       if(!currentCompetitionMeta){
         banner.hidden = true;
         updateBracketFabVisibility();
         return;
       }
       banner.hidden = false;
-      const flagEl = document.getElementById('leagueBannerFlag');
       const flagUrl = currentCompetitionMeta.country.iso ? `https://flagcdn.com/w80/${currentCompetitionMeta.country.iso}.png` : '';
       flagEl.src = flagUrl;
       flagEl.style.visibility = flagUrl ? 'visible' : 'hidden';
