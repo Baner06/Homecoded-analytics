@@ -79,7 +79,10 @@
       <button type="button" class="cal-today" id="btnToday" style="display:none">↩ Volver a hoy</button>
     </section>
     <section class="card" id="loadState" style="display:none" aria-hidden="true"></section>
-    <p id="daySummary" style="display:none;font-size:.75rem;color:var(--muted);margin-bottom:.625rem"></p>
+    <div id="daySummary" class="day-summary" style="display:none">
+      <span id="daySummaryText"></span>
+      <button type="button" id="btnDismissDaySummary" class="day-summary-close" aria-label="Cerrar aviso">&times;</button>
+    </div>
     <div id="noMatchesMsg" class="alert alert-err" style="display:none;background:rgba(94,179,246,.08);border-color:rgba(94,179,246,.2);color:#bee3f8"></div>
     <div id="errorMsg" class="alert alert-err" style="display:none"></div>
     <div id="leagueBanner" class="league-banner" hidden>
@@ -247,6 +250,10 @@
 
     const FAVORITES_KEY = 'csFavoriteCompetitionIds';
     const FAVORITES_ID = 'favorites';
+    const DAY_SUMMARY_DISMISSED_KEY = 'csDaySummaryDismissed';
+    function isDaySummaryDismissed(){
+      try { return localStorage.getItem(DAY_SUMMARY_DISMISSED_KEY) === '1'; } catch { return false; }
+    }
     const FAVORITES_FLAG_SRC = 'data:image/svg+xml,' + encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 21">'
       + '<rect width="28" height="21" rx="2" fill="#ff5c7a"/>'
@@ -499,7 +506,7 @@
         const suffix = cd.diff > 0 ? ` · ${cd.text}` : '';
         return `<span class="pill starting"><span class="status-dot" aria-hidden="true"></span>POR EMPEZAR${suffix}</span>`;
       }
-      return `<span class="pill upcoming"><span class="status-dot" aria-hidden="true"></span>PROXIMO PARTIDO · ${esc(cd.text)}</span>`;
+      return `<span class="pill upcoming"><span class="status-dot" aria-hidden="true"></span>${esc(cd.text)}</span>`;
     }
 
     function tickScheduledBadges(){
@@ -2832,8 +2839,10 @@
         : currentCompetitionMeta
           ? `${currentCompetitionMeta.country.name} · ${currentCompetitionMeta.competition.officialName}`
           : `Mundial 2026 · ${data.matchCount} partido(s)`;
-      document.getElementById('daySummary').style.display='block';
-      document.getElementById('daySummary').textContent='Toca un partido para analizar. Usa el icono de marcador para guardar predicciones.';
+      if(!isDaySummaryDismissed()){
+        document.getElementById('daySummary').style.display='flex';
+        document.getElementById('daySummaryText').textContent='Toca un partido para analizar. Usa el icono de marcador para guardar predicciones.';
+      }
 
       const noEl = document.getElementById('noMatchesMsg');
       if(!data.matches.length){
@@ -3387,6 +3396,10 @@
     document.getElementById('btnLeagueFavorite').addEventListener('click', ()=>{
       if(!currentCompetitionId || currentCompetitionId === FAVORITES_ID) return;
       toggleFavoriteCompetition(currentCompetitionId);
+    });
+    document.getElementById('btnDismissDaySummary').addEventListener('click', ()=>{
+      try { localStorage.setItem(DAY_SUMMARY_DISMISSED_KEY, '1'); } catch {}
+      document.getElementById('daySummary').style.display = 'none';
     });
     window.CodedSportsLeagues?.init?.({
       onSelectCompetition: selectCompetition,

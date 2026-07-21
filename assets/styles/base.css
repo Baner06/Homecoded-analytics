@@ -8,6 +8,14 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Sensación de app: sin scrollbar nativa apareciendo/desapareciendo
+     durante el scroll (el scroll en sí sigue funcionando igual). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {

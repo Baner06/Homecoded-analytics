@@ -18,7 +18,7 @@
 .card-title{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.625rem}
 .match{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:var(--space-3);background:var(--surface);box-shadow:var(--shadow-sm);transition:border-color var(--ease),box-shadow var(--ease)}
 .match.is-open{border-color:rgba(94,179,246,.28);box-shadow:var(--shadow-md)}
-.match-btn{width:100%;text-align:center;background:0;border:0;color:inherit;padding:1rem 1.125rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.5rem;transition:background .18s ease,transform .12s ease,filter .12s ease}
+.match-btn{width:100%;text-align:center;background:0;border:0;color:inherit;padding:1rem 1.25rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.5rem;transition:background .18s ease,transform .12s ease,filter .12s ease}
 .match-btn:hover{background:rgba(255,255,255,.035)}
 .match-btn:active{transform:scale(.98);filter:brightness(.9);background:rgba(255,255,255,.04)}
 .match-row{display:flex;align-items:center;justify-content:center;gap:.5rem;flex-wrap:wrap;width:100%}
