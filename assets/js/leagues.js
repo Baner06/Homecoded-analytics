@@ -3,6 +3,8 @@
   let overlayEl = null;
   let onSelectCompetition = null;
   let onExitToWorldCup = null;
+  let onSelectFavorites = null;
+  let getFavoriteCount = null;
   let openCountryCode = null;
   let openContinentId = 'sudamerica';
 
@@ -62,7 +64,13 @@
     if (!overlayEl) return;
     const body = overlayEl.querySelector('.league-panel-body');
     if (!body || !catalog) return;
+    const favCount = getFavoriteCount?.() ?? 0;
     body.innerHTML = `
+      <button type="button" class="league-worldcup-row" id="btnLeagueFavorites">
+        <span class="league-comp-icon" aria-hidden="true">❤</span>
+        <span class="league-comp-name">Favoritos</span>
+        <span class="league-continent-tag">${favCount} liga${favCount === 1 ? '' : 's'}</span>
+      </button>
       <button type="button" class="league-worldcup-row" id="btnLeagueExit">
         <span class="league-comp-icon" aria-hidden="true">🌎</span>
         <span class="league-comp-name">Mundial 2026</span>
@@ -73,6 +81,10 @@
   }
 
   function bindMenuBodyEvents(body) {
+    body.querySelector('#btnLeagueFavorites')?.addEventListener('click', () => {
+      closeMenu();
+      onSelectFavorites?.();
+    });
     body.querySelector('#btnLeagueExit')?.addEventListener('click', () => {
       closeMenu();
       onExitToWorldCup?.();
@@ -181,6 +193,8 @@
   function init(opts = {}) {
     onSelectCompetition = opts.onSelectCompetition || null;
     onExitToWorldCup = opts.onExitToWorldCup || null;
+    onSelectFavorites = opts.onSelectFavorites || null;
+    getFavoriteCount = opts.getFavoriteCount || null;
     return fetchCatalog();
   }
 

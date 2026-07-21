@@ -90,6 +90,7 @@
       </div>
       <div class="league-banner-actions">
         <button type="button" class="btn" id="btnLeagueStandings">Tabla</button>
+        <button type="button" class="btn btn-favorite" id="btnLeagueFavorite" aria-label="Agregar a favoritos" title="Agregar a favoritos">♡</button>
       </div>
     </div>
     <div id="matchesContainer"></div>
@@ -244,11 +245,42 @@
     const BRACKET_API = '/api/bracket/knockout';
     const SITE_URL = 'coded-sports-analytics.vercel.app';
 
-    const LAST_COMPETITION_KEY = 'csLastCompetitionId';
+    const FAVORITES_KEY = 'csFavoriteCompetitionIds';
+    const FAVORITES_ID = 'favorites';
     let currentCompetitionId = null;
     let currentCompetitionMeta = null;
     function matchesApiUrl(){
       return currentCompetitionId ? `/api/leagues?action=matches&competitionId=${encodeURIComponent(currentCompetitionId)}` : API_URL;
+    }
+
+    function getFavoriteIds(){
+      try {
+        const arr = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch { return []; }
+    }
+    function saveFavoriteIds(ids){
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids)); } catch {}
+    }
+    function isFavoriteCompetition(id){
+      return getFavoriteIds().includes(id);
+    }
+    function toggleFavoriteCompetition(id){
+      const ids = getFavoriteIds();
+      const idx = ids.indexOf(id);
+      if(idx === -1) ids.push(id); else ids.splice(idx, 1);
+      saveFavoriteIds(ids);
+      updateFavoriteButtonUI();
+    }
+    function updateFavoriteButtonUI(){
+      const btn = document.getElementById('btnLeagueFavorite');
+      if(!btn || !currentCompetitionId || currentCompetitionId === FAVORITES_ID) return;
+      const active = isFavoriteCompetition(currentCompetitionId);
+      btn.textContent = active ? '♥' : '♡';
+      btn.classList.toggle('is-active', active);
+      const label = active ? 'Quitar de favoritos' : 'Agregar a favoritos';
+      btn.setAttribute('aria-label', label);
+      btn.title = label;
     }
 
     async function fetchJsonApi(url, options = {}){
@@ -2789,9 +2821,11 @@
       document.getElementById('loadState').style.display='none';
       document.getElementById('errorMsg').style.display='none';
       updateCalendarUI(data);
-      document.getElementById('headerSub').textContent = currentCompetitionMeta
-        ? `${currentCompetitionMeta.country.name} · ${currentCompetitionMeta.competition.officialName}`
-        : `Mundial 2026 · ${data.matchCount} partido(s)`;
+      document.getElementById('headerSub').textContent = currentCompetitionId === FAVORITES_ID
+        ? `Favoritos · ${data.matchCount} partido(s)`
+        : currentCompetitionMeta
+          ? `${currentCompetitionMeta.country.name} · ${currentCompetitionMeta.competition.officialName}`
+          : `Mundial 2026 · ${data.matchCount} partido(s)`;
       document.getElementById('daySummary').style.display='block';
       document.getElementById('daySummary').textContent='Toca un partido para analizar. Usa el icono de marcador para guardar predicciones.';
 
@@ -2799,7 +2833,9 @@
       if(!data.matches.length){
         document.getElementById('matchesContainer').innerHTML='';
         noEl.style.display='block';
-        noEl.textContent=`No hay partidos programados para el ${data.dateLabel}. Usa las flechas para ver otros días.`;
+        noEl.textContent = data.favoritesEmpty
+          ? 'Aún no tienes ligas favoritas. Toca el ♡ junto a "Tabla" en cualquier liga para agregarla aquí.'
+          : `No hay partidos programados para el ${data.dateLabel}. Usa las flechas para ver otros días.`;
         clearInterval(pollTimer);
         clearInterval(clockTimer);
         clearInterval(scheduleTimer);
@@ -3118,6 +3154,70 @@
       updateBackButton();
     }
 
+    function clientTodayColombia(){
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
+    }
+
+    function formatDateLabelClient(dateIso){
+      const [y,m,d] = dateIso.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m-1, d, 12));
+      const parts = new Intl.DateTimeFormat('es-CO', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).formatToParts(dt);
+      const get = (t) => parts.find(p=>p.type===t)?.value ?? '';
+      const cap = (s) => s ? s.charAt(0).toUpperCase()+s.slice(1) : s;
+      return `${cap(get('weekday'))}, ${get('day')} de ${get('month').toLowerCase()} de ${get('year')}`;
+    }
+
+    async function fetchFavoritesMatchesData(date, bustCache){
+      const effectiveDate = date || todayAnchorDate || clientTodayColombia();
+      const ids = getFavoriteIds();
+      const tournamentMinDate = addDaysIso(effectiveDate, -60);
+      const tournamentMaxDate = addDaysIso(effectiveDate, 60);
+      const isToday = effectiveDate === (todayAnchorDate || clientTodayColombia());
+      const dateLabel = formatDateLabelClient(effectiveDate);
+
+      if(!ids.length){
+        return { ok:true, date: effectiveDate, matches: [], matchCount: 0, totalTournamentFixtures: 0, tournamentMinDate, tournamentMaxDate, isToday, dateLabel, favoritesEmpty: true };
+      }
+
+      const cacheBust = `_=${Date.now()}`;
+      const refreshFlag = bustCache ? '&refresh=1' : '';
+      const results = await Promise.all(ids.map(async (id) => {
+        const url = `/api/leagues?action=matches&competitionId=${encodeURIComponent(id)}&date=${encodeURIComponent(effectiveDate)}&${cacheBust}${refreshFlag}`;
+        try {
+          const d = await fetchJsonApi(url);
+          return d && d.ok ? d : null;
+        } catch { return null; }
+      }));
+      const valid = results.filter(Boolean);
+      if(!valid.length) throw new Error('No se pudieron cargar tus ligas favoritas');
+      const matches = valid.flatMap(d => d.matches).sort((a,b) => new Date(a.kickoffUtc) - new Date(b.kickoffUtc));
+      return {
+        ok: true,
+        date: effectiveDate,
+        matches,
+        matchCount: matches.length,
+        totalTournamentFixtures: matches.length,
+        tournamentMinDate,
+        tournamentMaxDate,
+        isToday,
+        dateLabel,
+      };
+    }
+
+    async function fetchMatchesData(date, bustCache){
+      if(currentCompetitionId === FAVORITES_ID){
+        return fetchFavoritesMatchesData(date, bustCache);
+      }
+      const cacheBust = `_=${Date.now()}`;
+      const refreshFlag = bustCache ? '&refresh=1' : '';
+      const base = matchesApiUrl();
+      const joiner = base.includes('?') ? '&' : '?';
+      const url = date
+        ? `${base}${joiner}date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
+        : `${base}${joiner}${cacheBust}${refreshFlag}`;
+      return fetchJsonApi(url);
+    }
+
     async function loadMatches(dateIso, silent=false, bustCache=false){
       let date = null;
       if(typeof dateIso === 'string'){
@@ -3136,14 +3236,7 @@
       }
       const requestedCompetitionId = currentCompetitionId;
       try{
-        const cacheBust = `_=${Date.now()}`;
-        const refreshFlag = bustCache ? '&refresh=1' : '';
-        const base = matchesApiUrl();
-        const joiner = base.includes('?') ? '&' : '?';
-        const url = date
-          ? `${base}${joiner}date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
-          : `${base}${joiner}${cacheBust}${refreshFlag}`;
-        const data = await fetchJsonApi(url);
+        const data = await fetchMatchesData(date, bustCache);
         if(requestedCompetitionId !== currentCompetitionId) return;
         if(!data.ok) throw new Error(data.error||'Error API');
         const prevMatches = silent && matchesData.length ? matchesData.slice() : [];
@@ -3204,6 +3297,7 @@
       flagEl.style.visibility = flagUrl ? 'visible' : 'hidden';
       document.getElementById('leagueBannerCountry').textContent = currentCompetitionMeta.country.name;
       document.getElementById('leagueBannerComp').textContent = currentCompetitionMeta.competition.officialName;
+      updateFavoriteButtonUI();
       updateBracketFabVisibility();
     }
 
@@ -3220,7 +3314,6 @@
       if(!meta) return;
       currentCompetitionId = competitionId;
       currentCompetitionMeta = meta;
-      try { localStorage.setItem(LAST_COMPETITION_KEY, competitionId); } catch {}
       updateLeagueBanner();
       if(!opts.skipLoad) loadMatches(undefined, false);
     }
@@ -3229,9 +3322,16 @@
       if(!currentCompetitionId) return;
       currentCompetitionId = null;
       currentCompetitionMeta = null;
-      try { localStorage.removeItem(LAST_COMPETITION_KEY); } catch {}
       updateLeagueBanner();
       loadMatches(undefined, false);
+    }
+
+    function selectFavorites(opts = {}){
+      if(currentCompetitionId === FAVORITES_ID) return;
+      currentCompetitionId = FAVORITES_ID;
+      currentCompetitionMeta = null;
+      updateLeagueBanner();
+      if(!opts.skipLoad) loadMatches(undefined, false);
     }
 
     function goHome(){
@@ -3241,8 +3341,8 @@
         listOpen = false;
         document.getElementById('betDrawer').classList.remove('open');
       }
-      if(currentCompetitionId){
-        exitToWorldCup();
+      if(currentCompetitionId !== FAVORITES_ID){
+        selectFavorites();
       } else if(currentDate && currentDate !== todayAnchorDate){
         pushNavState({ date: null, matchId: null, bracket: false, betList: false });
         loadMatches(undefined, false);
@@ -3261,9 +3361,15 @@
       if(!currentCompetitionId || !currentCompetitionMeta) return;
       window.CodedSportsStandings?.open?.(currentCompetitionId, currentCompetitionMeta.competition.officialName);
     });
-    const leaguesCatalogReady = window.CodedSportsLeagues?.init?.({
+    document.getElementById('btnLeagueFavorite').addEventListener('click', ()=>{
+      if(!currentCompetitionId || currentCompetitionId === FAVORITES_ID) return;
+      toggleFavoriteCompetition(currentCompetitionId);
+    });
+    window.CodedSportsLeagues?.init?.({
       onSelectCompetition: selectCompetition,
       onExitToWorldCup: exitToWorldCup,
+      onSelectFavorites: selectFavorites,
+      getFavoriteCount: () => getFavoriteIds().length,
     });
 
     document.getElementById('btnPrevDay').addEventListener('click', ()=>{
@@ -3327,13 +3433,7 @@
       const initialBracket = params.get('cuadro') === '1';
       const initialLista = params.get('lista') === '1';
       if(!initialDate){
-        try {
-          const savedCompetitionId = localStorage.getItem(LAST_COMPETITION_KEY);
-          if(savedCompetitionId){
-            await leaguesCatalogReady;
-            selectCompetition(savedCompetitionId, { skipLoad: true });
-          }
-        } catch {}
+        selectFavorites({ skipLoad: true });
       }
       await loadMatches(initialDate || undefined, false);
       if(initialMatch) openMatchById(initialMatch, { scroll: true });

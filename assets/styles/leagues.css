@@ -150,6 +150,19 @@
   flex-shrink: 0;
 }
 
+.btn-favorite {
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.4rem 0.55rem;
+  color: var(--muted);
+}
+
+.btn-favorite.is-active {
+  color: #ff5c7a;
+  border-color: rgba(255, 92, 122, 0.4);
+  background: rgba(255, 92, 122, 0.1);
+}
+
 /* Tabla de posiciones */
 .standings-subtitle {
   font-size: 0.6875rem;
