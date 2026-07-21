@@ -4,6 +4,17 @@
   padding: 0 var(--space-4) var(--space-4);
 }
 
+#mainContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+}
+
+#matchesContainer {
+  flex: 1;
+}
+
 header {
   position: sticky;
   top: 0;

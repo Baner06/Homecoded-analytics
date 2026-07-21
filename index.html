@@ -3455,9 +3455,7 @@
       const initialMatch = params.get('match') ? Number(params.get('match')) : null;
       const initialBracket = params.get('cuadro') === '1';
       const initialLista = params.get('lista') === '1';
-      if(!initialDate){
-        selectFavorites({ skipLoad: true });
-      }
+      selectFavorites({ skipLoad: true });
       await loadMatches(initialDate || undefined, false);
       if(initialMatch) openMatchById(initialMatch, { scroll: true });
       if(initialLista){
