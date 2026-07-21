@@ -217,9 +217,18 @@
     });
   }
 
+  function matchContext(matchId) {
+    const el = document.getElementById(`match-${matchId}`);
+    const competitionId = el?.dataset.competitionId || '';
+    const date = el?.dataset.date || '';
+    return { competitionId, date };
+  }
+
   async function fetchStats(matchId, bustCache) {
     const refresh = bustCache ? '&refresh=1' : '';
-    const res = await fetch(`/api/matches/stats?matchId=${matchId}${refresh}&_=${Date.now()}`, {
+    const { competitionId, date } = matchContext(matchId);
+    const ctx = competitionId ? `&competitionId=${encodeURIComponent(competitionId)}&date=${encodeURIComponent(date)}` : '';
+    const res = await fetch(`/api/matches/stats?matchId=${matchId}${ctx}${refresh}&_=${Date.now()}`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     });

@@ -1,6 +1,8 @@
 import { getMatchById } from '../../lib/fixtures.js';
 import { loadLiveScoresMap, getLiveResultForMatch } from '../../lib/liveScores.js';
 import { fetchLiveTracker, invalidateLiveTrackerCache } from '../../lib/liveTracker.js';
+import { getCompetition } from '../../lib/competitions.js';
+import { getLeagueMatchById } from '../../lib/leagueFixtures.js';
 
 export const config = { runtime: 'nodejs' };
 
@@ -21,7 +23,15 @@ export default async function handler(req, res) {
       invalidateLiveTrackerCache();
     }
 
-    const match = await getMatchById(matchId);
+    const competitionId = req.query?.competitionId || null;
+    const competition = competitionId ? getCompetition(competitionId) : null;
+    if (competitionId && (!competition || !competition.available)) {
+      return res.status(404).json({ ok: false, error: 'Competición no disponible' });
+    }
+
+    const match = competition
+      ? await getLeagueMatchById(competitionId, matchId, req.query?.date || undefined)
+      : await getMatchById(matchId);
     if (!match) {
       return res.status(404).json({ ok: false, error: 'Partido no encontrado' });
     }
@@ -36,15 +46,20 @@ export default async function handler(req, res) {
       });
     }
 
-    const liveMap = await loadLiveScoresMap(match.date, req.query?.refresh === '1');
-    const feed = getLiveResultForMatch(
-      liveMap,
-      match.date,
-      match.home.originalName,
-      match.away.originalName
-    );
+    let espnEventId;
+    if (competition) {
+      espnEventId = match.espnEventId;
+    } else {
+      const liveMap = await loadLiveScoresMap(match.date, req.query?.refresh === '1');
+      const feed = getLiveResultForMatch(
+        liveMap,
+        match.date,
+        match.home.originalName,
+        match.away.originalName
+      );
+      espnEventId = feed?.espnEventId || match.espnEventId;
+    }
 
-    const espnEventId = feed?.espnEventId || match.espnEventId;
     if (!espnEventId) {
       return res.status(200).json({
         ok: false,
@@ -58,7 +73,8 @@ export default async function handler(req, res) {
       espnEventId,
       match.home.name,
       match.away.name,
-      true
+      true,
+      competition ? competition.espnSlug : undefined
     );
 
     res.setHeader('Cache-Control', 'no-store, max-age=0, s-maxage=0');

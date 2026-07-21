@@ -2613,7 +2613,8 @@
       const clockHtml = isLive && (m.live?.display || ko?.display)
         ? `<span class="match-row-clock${clockCls}">${esc(ko?.display || m.live.display)}</span>` : '';
       const kickoffAttr = (isLive || isScheduled) ? ` data-kickoff="${esc(m.kickoffUtc)}"` : '';
-      return `<article class="match" id="match-${m.id}" data-id="${m.id}"${isLive ? ' data-live="1"' : ''}${isScheduled ? ' data-scheduled="1"' : ''}${kickoffAttr}>
+      const competitionAttr = m.competitionId ? ` data-competition-id="${esc(m.competitionId)}"` : '';
+      return `<article class="match" id="match-${m.id}" data-id="${m.id}" data-date="${esc(m.date)}"${competitionAttr}${isLive ? ' data-live="1"' : ''}${isScheduled ? ' data-scheduled="1"' : ''}${kickoffAttr}>
         <button type="button" class="match-btn"><div class="match-head">
           <div class="match-top">
             <span class="match-status-badge">${statusBadgeHtml(m)}</span>

@@ -177,10 +177,19 @@
     updateFeed(feed, data.matchEvents, data.currentMoment?.id, state);
   }
 
+  function matchContext(matchId) {
+    const el = document.getElementById(`match-${matchId}`);
+    const competitionId = el?.dataset.competitionId || '';
+    const date = el?.dataset.date || '';
+    return { competitionId, date };
+  }
+
   async function fetchTracker(matchId, bustCache) {
     const ts = Date.now();
     const refresh = bustCache ? '&refresh=1' : '';
-    const res = await fetch(`/api/matches/tracker?matchId=${matchId}${refresh}&_=${ts}`, {
+    const { competitionId, date } = matchContext(matchId);
+    const ctx = competitionId ? `&competitionId=${encodeURIComponent(competitionId)}&date=${encodeURIComponent(date)}` : '';
+    const res = await fetch(`/api/matches/tracker?matchId=${matchId}${ctx}${refresh}&_=${ts}`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     });
