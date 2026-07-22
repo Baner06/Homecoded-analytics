@@ -4,10 +4,19 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    { "path": "/api/cron/calibrate", "schedule": "0 6 * * *" }
+  ],
   "rewrites": [
     { "source": "/instalar", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/api/cron/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
     {
       "source": "/api/matches/(.*)",
       "headers": [
