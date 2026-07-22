@@ -4,8 +4,8 @@ export const config = { runtime: 'nodejs' };
 
 /**
  * Disparado por Vercel Cron (ver "crons" en vercel.json) una vez al día.
- * La lógica de "cada 14 días" vive dentro de runDailyCalibrationTick():
- * este endpoint solo la ejecuta y reporta qué hizo.
+ * La lógica de "recalibrar solo los lunes" vive dentro de
+ * runDailyCalibrationTick(): este endpoint solo la ejecuta y reporta qué hizo.
  */
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {

@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/assets/styles/tokens.css?v=15">
   <link rel="stylesheet" href="/assets/styles/base.css?v=15">
   <link rel="stylesheet" href="/assets/styles/layout.css?v=15">
-  <link rel="stylesheet" href="/assets/styles/components.css?v=16">
+  <link rel="stylesheet" href="/assets/styles/components.css?v=17">
   <link rel="stylesheet" href="/assets/styles/tools.css?v=15">
   <link rel="stylesheet" href="/assets/styles/live-tracker.css?v=2">
   <link rel="stylesheet" href="/assets/styles/match-stats.css?v=5">
@@ -89,7 +89,6 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </div>
-      <div class="cal-days" id="calDaysStrip" role="tablist" aria-label="Próximos 8 días"></div>
       <button type="button" class="cal-today" id="btnToday" style="display:none">↩ Volver a hoy</button>
     </section>
     <section class="card" id="loadState" style="display:none" aria-hidden="true"></section>
@@ -550,7 +549,6 @@
     let tournamentMin = null;
     let tournamentMax = null;
     let todayAnchorDate = null;
-    const DAY_STRIP_LEN = 9;
     let eventsBound = false;
     let navApplying = false;
     let navReady = false;
@@ -1289,33 +1287,7 @@
       document.getElementById('btnPrevDay').disabled = currentDate <= tournamentMin;
       document.getElementById('btnNextDay').disabled = currentDate >= tournamentMax;
       document.getElementById('btnToday').style.display = data.isToday ? 'none' : 'block';
-      renderDayStrip();
       if(miniCalOpen) renderMiniCal();
-    }
-
-    function renderDayStrip(){
-      const strip = document.getElementById('calDaysStrip');
-      if(!strip || !todayAnchorDate) return;
-      const dowFmt = new Intl.DateTimeFormat('es-CO', { weekday: 'short', timeZone: 'UTC' });
-      strip.innerHTML = '';
-      for(let i = 0; i < DAY_STRIP_LEN; i++){
-        const iso = addDaysIso(todayAnchorDate, i);
-        const [y, m, d] = iso.split('-').map(Number);
-        const dow = dowFmt.format(new Date(Date.UTC(y, m - 1, d))).replace('.', '');
-        const isActive = iso === currentDate;
-        const isToday = iso === todayAnchorDate;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'cal-day-chip' + (isActive ? ' is-active' : '') + (isToday && !isActive ? ' is-today' : '');
-        btn.setAttribute('aria-pressed', String(isActive));
-        btn.innerHTML = `<span class="cal-day-dow">${isToday ? 'Hoy' : esc(dow)}</span><span class="cal-day-num">${d}</span>`;
-        btn.addEventListener('click', () => {
-          if(iso === currentDate) return;
-          pushNavState({ date: iso, matchId: null, bracket: false, betList: listOpen });
-          loadMatches(iso);
-        });
-        strip.appendChild(btn);
-      }
     }
 
     let miniCalOpen = false;

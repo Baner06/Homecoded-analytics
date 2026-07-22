@@ -1,6 +1,17 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeNewFactor, getCalibrationFactors } from '../lib/calibration.js';
+import { computeNewFactor, getCalibrationFactors, isMondayIso } from '../lib/calibration.js';
+
+describe('lib/calibration isMondayIso', () => {
+  test('recognizes a known Monday', () => {
+    assert.equal(isMondayIso('2026-07-27'), true);
+  });
+
+  test('rejects the surrounding days', () => {
+    assert.equal(isMondayIso('2026-07-26'), false); // domingo
+    assert.equal(isMondayIso('2026-07-28'), false); // martes
+  });
+});
 
 describe('lib/calibration computeNewFactor', () => {
   test('moves the factor up when the market hits more than we predicted', () => {
