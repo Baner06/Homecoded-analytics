@@ -267,6 +267,7 @@
 
     const FAVORITES_KEY = 'csFavoriteCompetitionIds';
     const FAVORITES_ID = 'favorites';
+    const HOME_ID = 'home';
     const DAY_SUMMARY_DISMISSED_KEY = 'csDaySummaryDismissed';
     function isDaySummaryDismissed(){
       try { return localStorage.getItem(DAY_SUMMARY_DISMISSED_KEY) === '1'; } catch { return false; }
@@ -3029,9 +3030,11 @@
       updateCalendarUI(data);
       document.getElementById('headerSub').textContent = currentCompetitionId === FAVORITES_ID
         ? `Favoritos · ${data.matchCount} partido(s)`
-        : currentCompetitionMeta
-          ? `${currentCompetitionMeta.country.name} · ${currentCompetitionMeta.competition.officialName}`
-          : `Mundial 2026 · ${data.matchCount} partido(s)`;
+        : currentCompetitionId === HOME_ID
+          ? `Inicio · ${data.matchCount} partido(s)`
+          : currentCompetitionMeta
+            ? `${currentCompetitionMeta.country.name} · ${currentCompetitionMeta.competition.officialName}`
+            : `Mundial 2026 · ${data.matchCount} partido(s)`;
       if(!isDaySummaryDismissed()){
         document.getElementById('daySummary').style.display='flex';
         document.getElementById('daySummaryText').textContent='Toca un partido para analizar. Usa el icono de marcador para guardar predicciones.';
@@ -3408,9 +3411,21 @@
       };
     }
 
+    async function fetchHomeMatchesData(date, bustCache){
+      const cacheBust = `_=${Date.now()}`;
+      const refreshFlag = bustCache ? '&refresh=1' : '';
+      const url = date
+        ? `/api/leagues?action=home&date=${encodeURIComponent(date)}&${cacheBust}${refreshFlag}`
+        : `/api/leagues?action=home&${cacheBust}${refreshFlag}`;
+      return fetchJsonApi(url);
+    }
+
     async function fetchMatchesData(date, bustCache){
       if(currentCompetitionId === FAVORITES_ID){
         return fetchFavoritesMatchesData(date, bustCache);
+      }
+      if(currentCompetitionId === HOME_ID){
+        return fetchHomeMatchesData(date, bustCache);
       }
       const cacheBust = `_=${Date.now()}`;
       const refreshFlag = bustCache ? '&refresh=1' : '';
@@ -3556,6 +3571,14 @@
       if(!opts.skipLoad) loadMatches(undefined, false);
     }
 
+    function selectHome(opts = {}){
+      if(currentCompetitionId === HOME_ID) return;
+      currentCompetitionId = HOME_ID;
+      currentCompetitionMeta = null;
+      updateLeagueBanner();
+      if(!opts.skipLoad) loadMatches(undefined, false);
+    }
+
     function goHome(){
       if(bracketOpen) closeBracketFromUi();
       if(getOpenMatchId()) closeOpenMatchNav();
@@ -3563,8 +3586,8 @@
         listOpen = false;
         document.getElementById('betDrawer').classList.remove('open');
       }
-      if(currentCompetitionId !== FAVORITES_ID){
-        selectFavorites();
+      if(currentCompetitionId !== HOME_ID){
+        selectHome();
       } else if(currentDate && currentDate !== todayAnchorDate){
         pushNavState({ date: null, matchId: null, bracket: false, betList: false });
         loadMatches(undefined, false);
@@ -3584,7 +3607,7 @@
       window.CodedSportsStandings?.open?.(currentCompetitionId, currentCompetitionMeta.competition.officialName);
     });
     document.getElementById('btnLeagueFavorite').addEventListener('click', ()=>{
-      if(!currentCompetitionId || currentCompetitionId === FAVORITES_ID) return;
+      if(!currentCompetitionId || currentCompetitionId === FAVORITES_ID || currentCompetitionId === HOME_ID) return;
       toggleFavoriteCompetition(currentCompetitionId);
     });
     document.getElementById('btnDismissDaySummary').addEventListener('click', ()=>{
@@ -3665,7 +3688,7 @@
       const initialMatch = params.get('match') ? Number(params.get('match')) : null;
       const initialBracket = params.get('cuadro') === '1';
       const initialLista = params.get('lista') === '1';
-      selectFavorites({ skipLoad: true });
+      selectHome({ skipLoad: true });
       await loadMatches(initialDate || undefined, false);
       if(initialMatch) openMatchById(initialMatch, { scroll: true });
       if(initialLista){

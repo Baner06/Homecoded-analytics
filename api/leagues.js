@@ -4,7 +4,7 @@
  * Hobby de Vercel limita a 12 funciones por deployment.
  */
 import { buildCatalogTree, getCompetition, listAvailableCompetitions } from '../lib/competitions.js';
-import { getFinishedMatches } from '../lib/fixtures.js';
+import { getFinishedMatches, getTodayMatches } from '../lib/fixtures.js';
 import { getLeagueTodayMatches, invalidateLeagueCaches } from '../lib/leagueFixtures.js';
 import { getStandings } from '../lib/leagueStandings.js';
 import { loadCompetitionMatches } from '../lib/liveScores.js';
@@ -62,6 +62,48 @@ async function handleMatches(req, res, competitionId) {
     tournamentMaxDate,
     matchCount,
     totalTournamentFixtures,
+    matches,
+  });
+}
+
+/**
+ * "Inicio": todos los partidos del día (Mundial + toda liga/copa de clubes
+ * disponible) en una sola respuesta, para no disparar 30+ fetches desde el
+ * cliente (mismo motivo que buildTeamIndex más abajo: límite de 12 funciones
+ * serverless del plan Hobby de Vercel).
+ */
+async function handleHome(req, res) {
+  const requested = parseDateParam(req.query?.date);
+  const dateIso = requested || getDateISOInColombia();
+  const force = req.query?.refresh === '1';
+
+  const [worldCup, ...clubs] = await Promise.all([
+    getTodayMatches(dateIso).catch(() => ({ matches: [] })),
+    ...listAvailableCompetitions().map((c) =>
+      getLeagueTodayMatches(c.id, dateIso, force).catch(() => ({ matches: [] }))
+    ),
+  ]);
+
+  const matches = [worldCup, ...clubs]
+    .flatMap((d) => d.matches || [])
+    .sort((a, b) => new Date(a.kickoffUtc) - new Date(b.kickoffUtc));
+
+  const hasLive = matches.some((m) => m.status === 'live');
+  res.setHeader(
+    'Cache-Control',
+    hasLive ? 'public, s-maxage=60, stale-while-revalidate=30' : 'public, s-maxage=300, stale-while-revalidate=120'
+  );
+
+  return res.status(200).json({
+    ok: true,
+    source: 'coded-sports-api',
+    date: dateIso,
+    dateLabel: formatDateLongColombia(new Date(`${dateIso}T12:00:00`)),
+    isToday: dateIso === getDateISOInColombia(),
+    tournamentMinDate: addDaysToDateIso(dateIso, -60),
+    tournamentMaxDate: addDaysToDateIso(dateIso, 60),
+    matchCount: matches.length,
+    totalTournamentFixtures: matches.length,
     matches,
   });
 }
@@ -257,6 +299,7 @@ export default async function handler(req, res) {
 
   try {
     if (action === 'catalog') return await handleCatalog(req, res);
+    if (action === 'home') return await handleHome(req, res);
     if (action === 'matches') return await handleMatches(req, res, competitionId);
     if (action === 'standings') return await handleStandings(req, res, competitionId);
     if (action === 'teamIndex') return await handleTeamIndex(req, res);
