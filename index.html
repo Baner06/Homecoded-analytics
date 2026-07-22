@@ -67,8 +67,23 @@
         </button>
         <div class="cal-info">
           <span class="cal-badge" id="calBadge">Hoy</span>
-          <p class="cal-date" id="calDateLabel"></p>
+          <button type="button" class="cal-date" id="calDateLabel" aria-haspopup="dialog" aria-expanded="false"></button>
           <p class="cal-sub" id="calSubLabel"></p>
+          <div class="mini-cal-popover" id="miniCalPopover" role="dialog" aria-label="Elegir fecha">
+            <div class="mini-cal-head">
+              <button type="button" class="mini-cal-nav" id="miniCalPrevMonth" aria-label="Mes anterior">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <span class="mini-cal-month" id="miniCalMonthLabel"></span>
+              <button type="button" class="mini-cal-nav" id="miniCalNextMonth" aria-label="Mes siguiente">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <div class="mini-cal-dow-row">
+              <span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span>
+            </div>
+            <div class="mini-cal-grid" id="miniCalGrid"></div>
+          </div>
         </div>
         <button type="button" class="cal-btn" id="btnNextDay" aria-label="Día siguiente">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
@@ -226,7 +241,7 @@
     <div class="tutorial-spotlight hidden" id="tutorialSpotlight" aria-hidden="true"></div>
     <span class="tutorial-pin-label hidden" id="tutorialPinLabel"></span>
     <div class="tutorial-card tutorial-card--center" id="tutorialCard">
-      <p class="tutorial-step" id="tutorialStepLabel">Paso 1 de 9</p>
+      <p class="tutorial-step" id="tutorialStepLabel">Paso 1 de 10</p>
       <h2 class="tutorial-title" id="tutorialTitle">Bienvenido a Coded Sports</h2>
       <p class="tutorial-text" id="tutorialText"></p>
       <div class="tutorial-dots" id="tutorialDots"></div>
@@ -1005,10 +1020,17 @@
       },
       {
         title: 'Navega por fechas',
-        text: 'Aquí cambias el día del torneo con las flechas. «Volver a hoy» regresa al día actual. El botón ↻ (abajo a la derecha) actualiza datos.',
+        text: 'Cambia de día con las flechas, o toca la fecha para abrir un mini calendario y saltar directo al día que quieras. «Volver a hoy» regresa al día actual. El botón ↻ (abajo a la derecha) actualiza datos.',
         pin: 'Calendario',
         target: '#calendarBar',
         prepare(){ tutorialResetPanels(); },
+      },
+      {
+        title: 'Ligas y copas de clubes',
+        text: 'El botón ☰ (arriba a la derecha) abre el catálogo completo: Sudamérica, Europa, Norte y Centroamérica, África y Asia. Usa el buscador para encontrar una liga por nombre, o marca ♡ para guardarla en Favoritos.',
+        pin: 'Ligas',
+        target: '#btnLeagueMenu',
+        prepare(){ tutorialResetPanels(); window.CodedSportsLeagues?.closeMenu?.(); },
       },
       {
         title: 'Abre un partido',
@@ -1268,6 +1290,7 @@
       document.getElementById('btnNextDay').disabled = currentDate >= tournamentMax;
       document.getElementById('btnToday').style.display = data.isToday ? 'none' : 'block';
       renderDayStrip();
+      if(miniCalOpen) renderMiniCal();
     }
 
     function renderDayStrip(){
@@ -1293,6 +1316,104 @@
         });
         strip.appendChild(btn);
       }
+    }
+
+    let miniCalOpen = false;
+    let miniCalYear = null;
+    let miniCalMonth = null;
+
+    function miniCalPad2(n){ return String(n).padStart(2, '0'); }
+    function miniCalYmdToIso(y, m, d){ return `${y}-${miniCalPad2(m + 1)}-${miniCalPad2(d)}`; }
+    function miniCalDaysInMonth(y, m){ return new Date(Date.UTC(y, m + 1, 0)).getUTCDate(); }
+    function miniCalFirstWeekday(y, m){ return new Date(Date.UTC(y, m, 1)).getUTCDay(); }
+
+    function renderMiniCal(){
+      const grid = document.getElementById('miniCalGrid');
+      const label = document.getElementById('miniCalMonthLabel');
+      if(!grid || !label || miniCalYear == null) return;
+
+      const monthFmt = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+      const text = monthFmt.format(new Date(Date.UTC(miniCalYear, miniCalMonth, 1)));
+      label.textContent = text.charAt(0).toUpperCase() + text.slice(1);
+
+      const total = miniCalDaysInMonth(miniCalYear, miniCalMonth);
+      const firstDow = miniCalFirstWeekday(miniCalYear, miniCalMonth);
+
+      grid.innerHTML = '';
+      for(let i = 0; i < firstDow; i++){
+        const filler = document.createElement('span');
+        filler.className = 'mini-cal-cell mini-cal-cell-empty';
+        grid.appendChild(filler);
+      }
+      for(let d = 1; d <= total; d++){
+        const iso = miniCalYmdToIso(miniCalYear, miniCalMonth, d);
+        const inRange = (!tournamentMin || iso >= tournamentMin) && (!tournamentMax || iso <= tournamentMax);
+        const isToday = iso === todayAnchorDate;
+        const isActive = iso === currentDate;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mini-cal-cell' + (isActive ? ' is-active' : '') + (isToday && !isActive ? ' is-today' : '');
+        btn.textContent = String(d);
+        btn.disabled = !inRange;
+        btn.setAttribute('aria-pressed', String(isActive));
+        if(inRange){
+          btn.addEventListener('click', () => {
+            closeMiniCal();
+            if(iso === currentDate) return;
+            pushNavState({ date: iso, matchId: null, bracket: false, betList: listOpen });
+            loadMatches(iso);
+          });
+        }
+        grid.appendChild(btn);
+      }
+    }
+
+    function shiftMiniCalMonth(delta){
+      let m = miniCalMonth + delta;
+      let y = miniCalYear;
+      if(m < 0){ m = 11; y -= 1; }
+      if(m > 11){ m = 0; y += 1; }
+      miniCalMonth = m;
+      miniCalYear = y;
+      renderMiniCal();
+    }
+
+    function onMiniCalOutsideClick(e){
+      const popover = document.getElementById('miniCalPopover');
+      const trigger = document.getElementById('calDateLabel');
+      if(popover && !popover.contains(e.target) && e.target !== trigger){
+        closeMiniCal();
+      }
+    }
+
+    function onMiniCalKeydown(e){
+      if(e.key === 'Escape') closeMiniCal();
+    }
+
+    function openMiniCal(){
+      if(!currentDate) return;
+      const [y, m] = currentDate.split('-').map(Number);
+      miniCalYear = y;
+      miniCalMonth = m - 1;
+      miniCalOpen = true;
+      document.getElementById('miniCalPopover')?.classList.add('is-open');
+      document.getElementById('calDateLabel')?.setAttribute('aria-expanded', 'true');
+      renderMiniCal();
+      document.addEventListener('click', onMiniCalOutsideClick, true);
+      document.addEventListener('keydown', onMiniCalKeydown);
+    }
+
+    function closeMiniCal(){
+      miniCalOpen = false;
+      document.getElementById('miniCalPopover')?.classList.remove('is-open');
+      document.getElementById('calDateLabel')?.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('click', onMiniCalOutsideClick, true);
+      document.removeEventListener('keydown', onMiniCalKeydown);
+    }
+
+    function toggleMiniCal(){
+      if(miniCalOpen) closeMiniCal();
+      else openMiniCal();
     }
 
     function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
@@ -3428,6 +3549,12 @@
       pushNavState({ date: null, matchId: null, bracket: false, betList: listOpen });
       loadMatches(undefined, false);
     });
+    document.getElementById('calDateLabel').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      toggleMiniCal();
+    });
+    document.getElementById('miniCalPrevMonth').addEventListener('click', ()=> shiftMiniCalMonth(-1));
+    document.getElementById('miniCalNextMonth').addEventListener('click', ()=> shiftMiniCalMonth(1));
     document.getElementById('btnToggleList').addEventListener('click', ()=>{
       listOpen = !listOpen;
       document.getElementById('betDrawer').classList.toggle('open', listOpen);
