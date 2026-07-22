@@ -31,6 +31,7 @@
   function tierIcon(tier) {
     if (tier === 'top') return '🏆';
     if (tier === 'second') return '🥈';
+    if (tier === 'continental') return '🌍';
     return '🎽';
   }
 
@@ -48,7 +49,7 @@
     const flag = flagUrl(country.iso);
     return `<div class="league-country${open ? ' is-open' : ''}">
       <button type="button" class="league-country-row" data-country="${country.code}">
-        ${flag ? `<img class="league-country-flag" src="${flag}" alt="" width="24" height="18" loading="lazy">` : '<span class="league-country-flag" aria-hidden="true">🏳️</span>'}
+        ${flag ? `<img class="league-country-flag" src="${flag}" alt="" width="24" height="18" loading="lazy">` : `<span class="league-country-flag" aria-hidden="true">${esc(country.flagEmoji || '🏳️')}</span>`}
         <span class="league-country-name">${esc(country.name)}</span>
         <span class="league-country-chevron" aria-hidden="true">${open ? '▾' : '▸'}</span>
       </button>
@@ -78,7 +79,7 @@
     const flag = flagUrl(country.iso);
     return `<div class="league-country is-open">
       <div class="league-country-row league-country-row-static">
-        ${flag ? `<img class="league-country-flag" src="${flag}" alt="" width="24" height="18" loading="lazy">` : '<span class="league-country-flag" aria-hidden="true">🏳️</span>'}
+        ${flag ? `<img class="league-country-flag" src="${flag}" alt="" width="24" height="18" loading="lazy">` : `<span class="league-country-flag" aria-hidden="true">${esc(country.flagEmoji || '🏳️')}</span>`}
         <span class="league-country-name">${esc(country.name)}</span>
         <span class="league-continent-tag">${esc(continent.name)}</span>
       </div>

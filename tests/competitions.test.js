@@ -46,12 +46,23 @@ describe('lib/competitions catalog integrity', () => {
     }
   });
 
-  test('every country has a two-letter (or gb-xxx style) iso code for the flag CDN', () => {
+  test('every real country has a two-letter (or gb-xxx style) iso code for the flag CDN', () => {
     for (const country of COUNTRIES) {
+      if (country.iso === null) continue; // pseudo-country (confederation grouping), see next test
       assert.match(
         country.iso,
         /^[a-z]{2}(-[a-z]{3})?$/,
         `country "${country.code}" has a malformed iso "${country.iso}"`
+      );
+    }
+  });
+
+  test('every pseudo-country (iso: null) has a flagEmoji fallback for the menu', () => {
+    for (const country of COUNTRIES) {
+      if (country.iso !== null) continue;
+      assert.ok(
+        country.flagEmoji,
+        `pseudo-country "${country.code}" has no flagEmoji fallback`
       );
     }
   });
@@ -69,7 +80,7 @@ describe('lib/competitions catalog integrity', () => {
   test('every competition tier is one of the known values', () => {
     for (const comp of COMPETITIONS) {
       assert.ok(
-        ['top', 'second', 'cup'].includes(comp.tier),
+        ['top', 'second', 'cup', 'continental'].includes(comp.tier),
         `competition "${comp.id}" has unknown tier "${comp.tier}"`
       );
     }
@@ -115,7 +126,7 @@ describe('buildCatalogTree', () => {
   });
 
   test('tierLabel matches the Spanish label for each tier', () => {
-    const labelByTier = { top: 'Primera división', second: 'Segunda división', cup: 'Copa nacional' };
+    const labelByTier = { top: 'Primera división', second: 'Segunda división', cup: 'Copa nacional', continental: 'Torneo internacional' };
     for (const continent of tree) {
       for (const country of continent.countries) {
         for (const comp of country.competitions) {

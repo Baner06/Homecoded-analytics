@@ -313,6 +313,37 @@
       btn.title = label;
     }
 
+    const FAVORITE_TEAMS_KEY = 'csFavoriteTeamKeys';
+    function normalizeTeamKey(name){
+      return (name || '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function getFavoriteTeamKeys(){
+      try {
+        const arr = JSON.parse(localStorage.getItem(FAVORITE_TEAMS_KEY) || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch { return []; }
+    }
+    function saveFavoriteTeamKeys(keys){
+      try { localStorage.setItem(FAVORITE_TEAMS_KEY, JSON.stringify(keys)); } catch {}
+    }
+    function isFavoriteTeam(team){
+      if(!team?.name) return false;
+      return getFavoriteTeamKeys().includes(normalizeTeamKey(team.name));
+    }
+    function toggleFavoriteTeam(key){
+      if(!key) return;
+      const keys = getFavoriteTeamKeys();
+      const idx = keys.indexOf(key);
+      if(idx === -1) keys.push(key); else keys.splice(idx, 1);
+      saveFavoriteTeamKeys(keys);
+      if(matchesData.length) renderMatchesList(matchesData);
+    }
+
     async function fetchJsonApi(url, options = {}){
       const timeoutMs = options.timeout ?? 60000;
       const { timeout, ...fetchOpts } = options;
@@ -388,6 +419,8 @@
     const BET_KEY = 'hc_mi_apuesta';
     const TUTORIAL_KEY = 'hc_tutorial_v3';
     let matchesData = [];
+    let finishGraceUntil = 0;
+    const FINISH_GRACE_MS = 5 * 60 * 1000; // sigue sondeando tras el pitazo final: ESPN suele tardar unos minutos en confirmar stats/árbitro definitivos
     let myBets = JSON.parse(localStorage.getItem(BET_KEY) || '[]');
     const LIVE_CFG = { FH:45, FH_ADD:6, HT:15, SH:45, SH_ADD:8 };
 
@@ -960,12 +993,14 @@
       const liveOnPage = data.matches.some(m => m.status === 'live');
       const pendingOnPage = data.matches.some(m => m.status === 'scheduled' || m.status === 'live');
       const tournamentActive = isTournamentDayActive();
+      const inFinishGrace = Date.now() < finishGraceUntil;
 
-      if(!tournamentActive && !liveOnPage && !pendingOnPage) return;
+      if(!tournamentActive && !liveOnPage && !pendingOnPage && !inFinishGrace) return;
 
       let interval = 120000;
       if(liveOnPage) interval = 45000;
       else if(data.isToday && pendingOnPage) interval = 60000;
+      else if(inFinishGrace) interval = 45000;
       else if(tournamentActive) interval = 90000;
 
       pollTimer = setInterval(() => {
@@ -2675,7 +2710,13 @@
 
     function teamNameHtml(team){
       const cls = team.pending ? 'team-name pending' : 'team-name';
-      return `<strong class="${cls}">${esc(team.name)}</strong>`;
+      const favBtn = team.pending ? '' : (() => {
+        const key = normalizeTeamKey(team.name);
+        const active = isFavoriteTeam(team);
+        const label = active ? `Quitar ${team.name} de favoritos` : `Agregar ${team.name} a favoritos`;
+        return `<span class="team-fav-btn${active ? ' is-active' : ''}" role="button" aria-pressed="${active}" aria-label="${esc(label)}" data-team-key="${esc(key)}">${active ? '♥' : '♡'}</span>`;
+      })();
+      return `<strong class="${cls}">${esc(team.name)}</strong>${favBtn}`;
     }
 
     function renderMatchTeams(m){
@@ -2737,6 +2778,13 @@
       if(eventsBound) return;
       eventsBound = true;
       document.getElementById('matchesContainer').addEventListener('click', e=>{
+        const favBtn = e.target.closest('.team-fav-btn');
+        if(favBtn){
+          e.stopPropagation();
+          e.preventDefault();
+          toggleFavoriteTeam(favBtn.dataset.teamKey);
+          return;
+        }
         const viewBtn = e.target.closest('.view-switch button');
         if(viewBtn){
           const body = viewBtn.closest('.match-body');
@@ -2920,6 +2968,23 @@
       if(updated.length) refreshOpenMatchBodies(updated);
     }
 
+    function matchHasFavoriteTeam(m){
+      return isFavoriteTeam(m.home) || isFavoriteTeam(m.away);
+    }
+
+    /** Particionado estable: partidos de equipos favoritos primero, el resto conserva su orden (por horario). */
+    function sortMatchesForFavorites(matches){
+      return matches.slice().sort((a, b) => (matchHasFavoriteTeam(b) ? 1 : 0) - (matchHasFavoriteTeam(a) ? 1 : 0));
+    }
+
+    function renderMatchesList(matches){
+      document.getElementById('matchesContainer').innerHTML = sortMatchesForFavorites(matches).map(renderMatch).join('');
+      bindEvents();
+      bindPieInteractions();
+      bindBarTips();
+      refreshActionStates();
+    }
+
     function renderAll(data){
       matchesData = data.matches;
       viewingToday = data.isToday;
@@ -2949,11 +3014,7 @@
         return;
       }
       noEl.style.display='none';
-      document.getElementById('matchesContainer').innerHTML = data.matches.map(renderMatch).join('');
-      bindEvents();
-      bindPieInteractions();
-      bindBarTips();
-      refreshActionStates();
+      renderMatchesList(data.matches);
       updateBackButton();
       clearInterval(scheduleTimer);
       if(data.matches.some(m => m.status !== 'finished' && m.status !== 'live')){
@@ -3375,6 +3436,7 @@
             const p = prevMatches.find(x => x.id === m.id);
             return p && formVectorSig(p.recentForm) !== formVectorSig(m.recentForm);
           });
+          if(justFinished) finishGraceUntil = Date.now() + FINISH_GRACE_MS;
           if(justFinished || formChanged){
             clearTimeout(formRefreshTimer);
             formRefreshTimer = setTimeout(() => loadMatches(getPollDateArg(), true, true), 8000);

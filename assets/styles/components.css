@@ -25,6 +25,8 @@
 .match-teams{display:flex;align-items:center;justify-content:center;gap:.5rem;flex-wrap:wrap;width:100%}
 .team-side{display:inline-flex;align-items:center;gap:.375rem}
 .team-name{font-size:.8125rem;font-weight:600;line-height:1.2}
+.team-fav-btn{font-size:.875rem;line-height:1;color:var(--muted);cursor:pointer;padding:.15rem;display:inline-flex}
+.team-fav-btn.is-active{color:#ff5c7a}
 .match-vs{color:var(--muted);font-size:.75rem;font-weight:400}
 .match-meta{font-size:.6875rem;color:var(--muted);font-weight:400;text-align:center;width:100%}
 .pill{font-size:.625rem;padding:.2rem .55rem;border-radius:9999px;border:1px solid var(--border);color:var(--muted);background:transparent;display:inline-flex;align-items:center;gap:.35rem;font-weight:500;line-height:1.2}
