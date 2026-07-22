@@ -116,6 +116,19 @@ describe('buildCatalogTree', () => {
     assert.deepEqual(tree.map((c) => c.id), CONTINENTS.map((c) => c.id));
   });
 
+  test('confederation club-tournament pseudo-countries sort first within their continent', () => {
+    const continentsWithClubTournaments = ['europa', 'sudamerica', 'norteamerica', 'africa', 'asia'];
+    for (const continentId of continentsWithClubTournaments) {
+      const continent = tree.find((c) => c.id === continentId);
+      assert.ok(continent, `continent "${continentId}" missing from tree`);
+      assert.equal(
+        continent.countries[0]?.iso,
+        null,
+        `expected the confederation pseudo-country to lead "${continentId}", got "${continent.countries[0]?.code}"`
+      );
+    }
+  });
+
   test('every country in the tree lists all of its competitions', () => {
     for (const continent of tree) {
       for (const country of continent.countries) {

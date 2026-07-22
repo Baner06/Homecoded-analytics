@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aciertos y desaciertos · Coded Sports</title>
+  <link rel="icon" href="/CodedSportsLogo.png" type="image/png">
+  <link rel="stylesheet" href="/assets/styles/tokens.css?v=1">
+  <link rel="stylesheet" href="/assets/styles/base.css?v=1">
+  <style>
+    .wrap { max-width: 640px; margin: 0 auto; padding: var(--space-4) var(--space-4) var(--space-6); width: 100%; }
+    .back-link { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); text-decoration: none; font-size: .75rem; margin-bottom: var(--space-4); }
+    .back-link:hover { color: var(--text); }
+    .team-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); }
+    .team-header img { width: 2.5rem; height: 2.5rem; object-fit: contain; border-radius: 50%; background: var(--surface-raised); }
+    .team-header .fallback-badge { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--surface-raised); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+    .team-header h1 { font-size: 1.125rem; font-weight: 700; }
+    .team-header p { font-size: .75rem; color: var(--muted); }
+    .state-msg { text-align: center; color: var(--muted); padding: var(--space-6) 0; font-size: .8125rem; }
+    .match-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
+    .match-card-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
+    .match-vs-line { font-size: .8125rem; font-weight: 600; }
+    .match-result-tag { font-size: .625rem; text-transform: uppercase; letter-spacing: .04em; padding: .2rem .55rem; border-radius: var(--radius-full); border: 1px solid var(--border); flex-shrink: 0; }
+    .match-result-tag.win { color: var(--success); border-color: rgba(52, 211, 153, .35); background: rgba(52, 211, 153, .1); }
+    .match-result-tag.draw { color: var(--warning); border-color: rgba(251, 191, 36, .35); background: rgba(251, 191, 36, .1); }
+    .match-result-tag.loss { color: var(--danger); border-color: rgba(248, 113, 113, .35); background: rgba(248, 113, 113, .1); }
+    .match-meta-line { font-size: .6875rem; color: var(--muted); margin-bottom: var(--space-2); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .chip { font-size: .6875rem; padding: .3rem .55rem; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; align-items: center; gap: .3rem; }
+    .chip.hit { color: var(--success); border-color: rgba(52, 211, 153, .35); background: rgba(52, 211, 153, .08); }
+    .chip.miss { color: var(--danger); border-color: rgba(248, 113, 113, .35); background: rgba(248, 113, 113, .08); }
+    .chip.unknown { color: var(--muted); }
+    .summary-line { font-size: .6875rem; color: var(--muted); margin-top: var(--space-2); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back-link" href="/" id="backLink">← Coded Sports</a>
+    <div class="team-header" id="teamHeader"></div>
+    <div id="content"><p class="state-msg">Cargando historial…</p></div>
+  </div>
+
+  <script>
+    function esc(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function resultLabel(result) {
+      if (result === 'win') return 'Ganó';
+      if (result === 'loss') return 'Perdió';
+      return 'Empató';
+    }
+
+    function renderChip(item) {
+      const outcome = item.outcome === 'hit' ? 'hit' : item.outcome === 'miss' ? 'miss' : 'unknown';
+      const icon = outcome === 'hit' ? '✓' : outcome === 'miss' ? '✕' : '·';
+      return `<span class="chip ${outcome}"><span aria-hidden="true">${icon}</span>${esc(item.label)}</span>`;
+    }
+
+    function renderMatchCard(m) {
+      const items = (m.review?.items || []).slice().sort((a, b) => a.rank - b.rank);
+      const hits = items.filter((i) => i.outcome === 'hit').length;
+      const misses = items.filter((i) => i.outcome === 'miss').length;
+      const chips = items.length
+        ? `<div class="chip-row">${items.map(renderChip).join('')}</div>`
+        : '<p class="summary-line">Sin datos de predicciones para este partido.</p>';
+
+      return `<article class="match-card">
+        <div class="match-card-top">
+          <span class="match-vs-line">${esc(m.team)} ${esc(m.score || '')} ${esc(m.opponent)}</span>
+          <span class="match-result-tag ${m.result}">${resultLabel(m.result)}</span>
+        </div>
+        <p class="match-meta-line">${esc(m.date)}${m.stageLabel ? ' · ' + esc(m.stageLabel) : ''}</p>
+        ${chips}
+        ${items.length ? `<p class="summary-line">${hits} acierto(s) · ${misses} desacierto(s)</p>` : ''}
+      </article>`;
+    }
+
+    async function init() {
+      const params = new URLSearchParams(location.search);
+      const teamName = params.get('team') || '';
+      const competitionId = params.get('competitionId') || '';
+      const content = document.getElementById('content');
+      const header = document.getElementById('teamHeader');
+
+      if (!teamName) {
+        content.innerHTML = '<p class="state-msg">Falta indicar el equipo.</p>';
+        return;
+      }
+
+      header.innerHTML = `
+        <span class="fallback-badge" aria-hidden="true">⚽</span>
+        <div><h1>${esc(teamName)}</h1><p>Últimos partidos · aciertos y desaciertos</p></div>
+      `;
+      document.title = `${teamName} · Aciertos y desaciertos · Coded Sports`;
+
+      try {
+        const url = `/api/leagues?action=teamReview&teamName=${encodeURIComponent(teamName)}${competitionId ? `&competitionId=${encodeURIComponent(competitionId)}` : ''}`;
+        const res = await fetch(url, { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Error al cargar el historial');
+
+        header.querySelector('p').textContent = `${data.competitionName} · últimos partidos`;
+
+        if (!data.matches.length) {
+          content.innerHTML = '<p class="state-msg">Este equipo todavía no tiene partidos finalizados con predicciones registradas.</p>';
+          return;
+        }
+
+        content.innerHTML = data.matches.map(renderMatchCard).join('');
+      } catch (err) {
+        content.innerHTML = `<p class="state-msg">${esc(err.message || 'No se pudo cargar el historial.')}</p>`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

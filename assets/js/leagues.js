@@ -1,9 +1,11 @@
 (function (global) {
   let catalog = null;
+  let teamIndex = null;
   let overlayEl = null;
   let onSelectCompetition = null;
   let onExitToWorldCup = null;
   let onSelectFavorites = null;
+  let onSelectTeam = null;
   let getFavoriteCount = null;
   let openCountryCode = null;
   let openContinentId = 'sudamerica';
@@ -73,6 +75,21 @@
     return normalize(country.name).includes(normQuery) || normalize(comp.officialName).includes(normQuery);
   }
 
+  function matchesTeam(team, normQuery) {
+    return normalize(team.name).includes(normQuery);
+  }
+
+  function teamRowHtml(team) {
+    const logo = team.logo
+      ? `<img class="league-team-logo" src="${esc(team.logo)}" alt="" width="20" height="20" loading="lazy">`
+      : '<span class="league-team-logo" aria-hidden="true">⚽</span>';
+    return `<button type="button" class="league-team-row" data-team-name="${esc(team.name)}" data-competition-id="${esc(team.competitionId || '')}">
+      ${logo}
+      <span class="league-comp-name">${esc(team.name)}</span>
+      <span class="league-comp-tag">${esc(team.competitionName)}</span>
+    </button>`;
+  }
+
   function searchGroupHtml(country, continent, normQuery) {
     const matched = country.competitions.filter((c) => matchesSearch(country, c, normQuery));
     if (!matched.length) return '';
@@ -97,10 +114,16 @@
         if (html) groups.push(html);
       }
     }
-    if (!groups.length) {
+
+    const matchedTeams = (teamIndex || []).filter((t) => matchesTeam(t, normQuery)).slice(0, 20);
+    const teamsHtml = matchedTeams.length
+      ? `<div class="league-team-results">${matchedTeams.map(teamRowHtml).join('')}</div>`
+      : '';
+
+    if (!groups.length && !teamsHtml) {
       return `<p class="league-search-empty">Sin resultados para «${esc(query)}»</p>`;
     }
-    return `<div class="league-search-results">${groups.join('')}</div>`;
+    return `<div class="league-search-results">${teamsHtml}${groups.join('')}</div>`;
   }
 
   function renderMenuBody() {
@@ -162,6 +185,14 @@
         onSelectCompetition?.(id);
       });
     });
+    content.querySelectorAll('.league-team-row').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.teamName;
+        const competitionId = btn.dataset.competitionId || null;
+        closeMenu();
+        onSelectTeam?.({ name, competitionId });
+      });
+    });
   }
 
   function buildOverlay() {
@@ -207,6 +238,18 @@
     return catalog;
   }
 
+  async function fetchTeamIndex() {
+    if (teamIndex) return teamIndex;
+    try {
+      const res = await fetch('/api/leagues?action=teamIndex', { cache: 'no-store' });
+      const data = await res.json();
+      teamIndex = data.teams || [];
+    } catch {
+      teamIndex = [];
+    }
+    return teamIndex;
+  }
+
   function openMenu() {
     if (!overlayEl) overlayEl = buildOverlay();
     overlayEl.classList.remove('hidden');
@@ -214,6 +257,7 @@
     const searchInput = overlayEl.querySelector('#leagueSearchInput');
     if (searchInput) searchInput.value = '';
     fetchCatalog().then(renderMenuBody);
+    fetchTeamIndex().then(() => { if (searchQuery.trim()) renderMenuBody(); });
     if (global.CodedSportsGestures) {
       global.CodedSportsGestures.createDraggableSheet(
         overlayEl.querySelector('.league-panel'),
@@ -257,6 +301,7 @@
     onSelectCompetition = opts.onSelectCompetition || null;
     onExitToWorldCup = opts.onExitToWorldCup || null;
     onSelectFavorites = opts.onSelectFavorites || null;
+    onSelectTeam = opts.onSelectTeam || null;
     getFavoriteCount = opts.getFavoriteCount || null;
     return fetchCatalog();
   }

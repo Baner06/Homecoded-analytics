@@ -344,6 +344,13 @@
       if(matchesData.length) renderMatchesList(matchesData);
     }
 
+    function openTeamReview(teamName, competitionId){
+      if(!teamName) return;
+      const params = new URLSearchParams({ team: teamName });
+      if(competitionId) params.set('competitionId', competitionId);
+      window.open(`/team-review.html?${params.toString()}`, '_blank');
+    }
+
     async function fetchJsonApi(url, options = {}){
       const timeoutMs = options.timeout ?? 60000;
       const { timeout, ...fetchOpts } = options;
@@ -2785,6 +2792,14 @@
           toggleFavoriteTeam(favBtn.dataset.teamKey);
           return;
         }
+        const nameEl = e.target.closest('.team-name');
+        if(nameEl){
+          e.stopPropagation();
+          e.preventDefault();
+          const competitionId = nameEl.closest('.match')?.dataset.competitionId || null;
+          openTeamReview(nameEl.textContent.trim(), competitionId);
+          return;
+        }
         const viewBtn = e.target.closest('.view-switch button');
         if(viewBtn){
           const body = viewBtn.closest('.match-body');
@@ -2972,9 +2987,30 @@
       return isFavoriteTeam(m.home) || isFavoriteTeam(m.away);
     }
 
-    /** Particionado estable: partidos de equipos favoritos primero, el resto conserva su orden (por horario). */
+    const TIER_INTEREST_WEIGHT = { continental: 30, top: 20, second: 10, cup: 10 };
+    /**
+     * Nivel de interés de un partido: qué tan parejo está según el modelo (dominance
+     * cerca de 50/50 = más parejo), un plus si está en vivo, y un plus por jerarquía
+     * de competición. La jerarquía solo diferencia partidos en la vista Favoritos
+     * (que mezcla competiciones); en cualquier otra vista es constante para todos.
+     */
+    function matchInterestScore(m){
+      const dominanceHome = m.analysis?.dominance?.home;
+      const parity = 100 - Math.abs((typeof dominanceHome === 'number' ? dominanceHome : 50) - 50) * 2;
+      const liveBonus = m.status === 'live' ? 50 : 0;
+      const tier = m.competitionId
+        ? window.CodedSportsLeagues?.getCompetitionMeta?.(m.competitionId)?.competition?.tier
+        : 'top'; // Mundial 2026
+      const tierBonus = TIER_INTEREST_WEIGHT[tier] || 0;
+      return parity + liveBonus + tierBonus;
+    }
+
+    /** Particionado estable: favoritos primero, luego el resto por nivel de interés descendente. */
     function sortMatchesForFavorites(matches){
-      return matches.slice().sort((a, b) => (matchHasFavoriteTeam(b) ? 1 : 0) - (matchHasFavoriteTeam(a) ? 1 : 0));
+      return matches.slice().sort((a, b) => {
+        const favDiff = (matchHasFavoriteTeam(b) ? 1 : 0) - (matchHasFavoriteTeam(a) ? 1 : 0);
+        return favDiff !== 0 ? favDiff : matchInterestScore(b) - matchInterestScore(a);
+      });
     }
 
     function renderMatchesList(matches){
@@ -3559,6 +3595,7 @@
       onSelectCompetition: selectCompetition,
       onExitToWorldCup: exitToWorldCup,
       onSelectFavorites: selectFavorites,
+      onSelectTeam: (team) => openTeamReview(team.name, team.competitionId),
       getFavoriteCount: () => getFavoriteIds().length,
     });
 

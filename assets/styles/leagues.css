@@ -54,7 +54,8 @@
 .league-worldcup-row,
 .league-continent-row,
 .league-country-row,
-.league-comp-row {
+.league-comp-row,
+.league-team-row {
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -80,7 +81,8 @@
 .league-worldcup-row:hover,
 .league-continent-row:not(.is-disabled):hover,
 .league-country-row:not(.league-country-row-static):hover,
-.league-comp-row:not(.is-disabled):hover {
+.league-comp-row:not(.is-disabled):hover,
+.league-team-row:hover {
   background: rgba(94, 179, 246, 0.08);
   border-color: rgba(94, 179, 246, 0.25);
 }
@@ -152,6 +154,25 @@
 
 .league-comp-name {
   flex: 1;
+}
+
+.league-team-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.league-team-row {
+  font-size: 0.8125rem;
+}
+
+.league-team-logo {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* Banner "viendo esta liga" sobre la lista de partidos */
