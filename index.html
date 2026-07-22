@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Coded Sports">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Coded Sports — Mundial 2026</title>
+  <title>Coded Sports</title>
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/CodedSportsLogo-svg.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/CodedSportsLogo-svg.svg">
+  <link rel="icon" href="/CodedSportsLogo.png" type="image/png">
+  <link rel="apple-touch-icon" href="/CodedSportsLogo.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="/assets/styles/tokens.css?v=15">
   <link rel="stylesheet" href="/assets/styles/base.css?v=15">
@@ -32,7 +32,7 @@
       <div class="header-bar" id="headerBar">
         <div class="header-top">
         <div class="brand">
-          <img src="/CodedSportsLogo-svg.svg" alt="Coded Sports" class="site-logo" id="siteLogoHome" width="40" height="40" role="button" tabindex="0" aria-label="Ir al inicio">
+          <img src="/CodedSportsLogo.png" alt="Coded Sports" class="site-logo" id="siteLogoHome" width="40" height="40" role="button" tabindex="0" aria-label="Ir al inicio">
           <div>
             <h1>Coded Sports</h1>
             <p id="headerSub">Mundial 2026 · 0 partido(s)</p>
@@ -1783,22 +1783,17 @@
 
     async function loadLogoForPdf(){
       try {
-        const res = await fetch('/CodedSportsLogo-svg.svg');
-        if(!res.ok) return null;
-        const svgText = await res.text();
         const img = new Image();
-        const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' }));
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
-          img.src = url;
+          img.src = '/CodedSportsLogo.png';
         });
         const size = 128;
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
         canvas.getContext('2d').drawImage(img, 0, 0, size, size);
-        URL.revokeObjectURL(url);
         return canvas.toDataURL('image/png');
       } catch {
         return null;

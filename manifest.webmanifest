@@ -11,15 +11,15 @@
   "lang": "es",
   "icons": [
     {
-      "src": "/CodedSportsLogo-svg.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/CodedSportsLogo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/CodedSportsLogo-svg.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
+      "src": "/CodedSportsLogo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]

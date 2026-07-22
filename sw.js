@@ -1,8 +1,8 @@
-const CACHE = 'coded-sports-v43';
+const CACHE = 'coded-sports-v44';
 const SHELL = [
   '/',
   '/index.html',
-  '/CodedSportsLogo-svg.svg',
+  '/CodedSportsLogo.png',
   '/manifest.webmanifest',
   '/assets/styles/tokens.css?v=15',
   '/assets/styles/base.css?v=15',
