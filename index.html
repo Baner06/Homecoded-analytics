@@ -1752,7 +1752,7 @@
     function drawPdfHeader(doc, W, margin, logoData, options = {}){
       const colors = options.colors || PDF;
       const isFirstPage = options.isFirstPage !== false;
-      const title = options.title || 'Reporte de Predicciones - Mundial FIFA 2026';
+      const title = options.title || 'Reporte de Predicciones - Coded Sports';
       const showGenerated = options.showGenerated !== false;
       const headerH = isFirstPage ? 40 : 15;
       doc.setFillColor(...colors.bg);
