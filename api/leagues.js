@@ -66,21 +66,37 @@ async function handleMatches(req, res, competitionId) {
   });
 }
 
+const homeCache = new Map(); // dateIso -> { at, payload }
+const HOME_CACHE_MS = 45 * 1000;
+
 /**
  * "Inicio": todos los partidos del día (Mundial + toda liga/copa de clubes
- * disponible) en una sola respuesta, para no disparar 30+ fetches desde el
- * cliente (mismo motivo que buildTeamIndex más abajo: límite de 12 funciones
- * serverless del plan Hobby de Vercel).
+ * disponible — 98 competiciones hoy) en una sola respuesta, para no disparar
+ * ~100 fetches desde el cliente (mismo motivo que buildTeamIndex más abajo:
+ * límite de 12 funciones serverless del plan Hobby de Vercel). Cada llamada
+ * a getLeagueTodayMatches pide skipRecentForm: hacerlo con forma real
+ * multiplicado por 98 competiciones agotaba el tiempo de la función y varias
+ * quedaban silenciosamente vacías — el detalle de un partido concreto
+ * (action=matches, una sola competición) sigue calculando la forma real.
  */
 async function handleHome(req, res) {
   const requested = parseDateParam(req.query?.date);
   const dateIso = requested || getDateISOInColombia();
   const force = req.query?.refresh === '1';
 
+  const now = Date.now();
+  const cached = homeCache.get(dateIso);
+  if (!force && cached && now - cached.at < HOME_CACHE_MS) {
+    res.setHeader('Cache-Control', cached.hasLive
+      ? 'public, s-maxage=60, stale-while-revalidate=30'
+      : 'public, s-maxage=300, stale-while-revalidate=120');
+    return res.status(200).json(cached.payload);
+  }
+
   const [worldCup, ...clubs] = await Promise.all([
     getTodayMatches(dateIso).catch(() => ({ matches: [] })),
     ...listAvailableCompetitions().map((c) =>
-      getLeagueTodayMatches(c.id, dateIso, force).catch(() => ({ matches: [] }))
+      getLeagueTodayMatches(c.id, dateIso, force, { skipRecentForm: true }).catch(() => ({ matches: [] }))
     ),
   ]);
 
@@ -94,7 +110,7 @@ async function handleHome(req, res) {
     hasLive ? 'public, s-maxage=60, stale-while-revalidate=30' : 'public, s-maxage=300, stale-while-revalidate=120'
   );
 
-  return res.status(200).json({
+  const payload = {
     ok: true,
     source: 'coded-sports-api',
     date: dateIso,
@@ -105,7 +121,10 @@ async function handleHome(req, res) {
     matchCount: matches.length,
     totalTournamentFixtures: matches.length,
     matches,
-  });
+  };
+  homeCache.set(dateIso, { at: now, hasLive, payload });
+
+  return res.status(200).json(payload);
 }
 
 async function getRecentFinishedMatches(competition) {
